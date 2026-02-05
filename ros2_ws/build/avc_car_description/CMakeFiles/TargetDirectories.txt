@@ -1,0 +1,9 @@
+/home/storby/ros2_ws/build/avc_car_description/CMakeFiles/uninstall.dir
+/home/storby/ros2_ws/build/avc_car_description/CMakeFiles/avc_car_description_uninstall.dir
+/home/storby/ros2_ws/build/avc_car_description/CMakeFiles/test.dir
+/home/storby/ros2_ws/build/avc_car_description/CMakeFiles/edit_cache.dir
+/home/storby/ros2_ws/build/avc_car_description/CMakeFiles/rebuild_cache.dir
+/home/storby/ros2_ws/build/avc_car_description/CMakeFiles/list_install_components.dir
+/home/storby/ros2_ws/build/avc_car_description/CMakeFiles/install.dir
+/home/storby/ros2_ws/build/avc_car_description/CMakeFiles/install/local.dir
+/home/storby/ros2_ws/build/avc_car_description/CMakeFiles/install/strip.dir

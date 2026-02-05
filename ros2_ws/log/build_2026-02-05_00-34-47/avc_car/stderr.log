@@ -1,0 +1,10 @@
+In file included from [01m[K/home/storby/ros2_ws/src/abc_avc/avc_car/hardware/include/avc_car/serialcomms.hpp:1[m[K,
+                 from [01m[K/home/storby/ros2_ws/src/abc_avc/avc_car/hardware/avc_car_system.cpp:16[m[K:
+[01m[K/home/storby/ros2_ws/src/abc_avc/avc_car/hardware/include/avc_car/SerialTransfer.hpp:[m[K In member function ‘[01m[Kuint16_t SerialTransfer::Packet::[01;32m[KtxObj[m[K(const T&, const uint16_t&, const uint16_t&)[m[K’:
+[01m[K/home/storby/ros2_ws/src/abc_avc/avc_car/hardware/include/avc_car/SerialTransfer.hpp:425:43:[m[K [01;35m[Kwarning: [m[Kuse of old-style cast to ‘[01m[Kuint8_t*[m[K’ {aka ‘[01m[Kunsigned char*[m[K’} [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wold-style-cast-Wold-style-cast]8;;[m[K]
+  425 |                 uint8_t* ptr = (uint8_t*)&[01;35m[Kval[m[K;
+      |                                           [01;35m[K^~~[m[K
+[01m[K/home/storby/ros2_ws/src/abc_avc/avc_car/hardware/include/avc_car/SerialTransfer.hpp:[m[K In member function ‘[01m[Kuint16_t SerialTransfer::Packet::[01;32m[KrxObj[m[K(const T&, const uint16_t&, const uint16_t&)[m[K’:
+[01m[K/home/storby/ros2_ws/src/abc_avc/avc_car/hardware/include/avc_car/SerialTransfer.hpp:467:43:[m[K [01;35m[Kwarning: [m[Kuse of old-style cast to ‘[01m[Kuint8_t*[m[K’ {aka ‘[01m[Kunsigned char*[m[K’} [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wold-style-cast-Wold-style-cast]8;;[m[K]
+  467 |                 uint8_t* ptr = (uint8_t*)&[01;35m[Kval[m[K;
+      |                                           [01;35m[K^~~[m[K

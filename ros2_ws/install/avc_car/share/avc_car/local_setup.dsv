@@ -1,0 +1,3 @@
+source;share/avc_car/environment/ament_prefix_path.sh
+source;share/avc_car/environment/library_path.sh
+source;share/avc_car/environment/path.sh
