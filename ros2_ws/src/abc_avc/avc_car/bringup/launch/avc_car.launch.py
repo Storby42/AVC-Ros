@@ -76,8 +76,13 @@ def generate_launch_description():
         package='twist_mux',
         executable='twist_mux',
         parameters=[twist_mux_params],
-        remappings=[('/cmd_vel_out', '/bic_cont/reference_unstamped')], 
+        remappings=[('/cmd_vel_out', '/bic_cont/reference')], # TODO: idk if this is unstamped or not ??
         # the velocity comands are sent to the bicycle controller, which then send commands to the hardware interface
+    )
+
+    robot_localization = IncludeLaunchDescription(
+                PythonLaunchDescriptionSource([os.path.join(
+                    get_package_share_directory('robot_localization'), 'launch', 'ekf.launch.py')]),
     )
 
     control_node = Node(
@@ -148,6 +153,7 @@ def generate_launch_description():
         control_node,
         robot_state_pub_bicycle_node,
         twist_mux,
+        robot_localization,
         joint_state_broadcaster_spawner,
         delay_rviz_after_joint_state_broadcaster_spawner,
         delay_robot_controller_spawner_after_joint_state_broadcaster_spawner,

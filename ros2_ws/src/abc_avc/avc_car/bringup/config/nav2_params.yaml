@@ -90,11 +90,12 @@ controller_server:
       plugin: "nav2_controller::SimpleGoalChecker"
       xy_goal_tolerance: 0.15 # meters
       yaw_goal_tolerance: 0.05 # radians
-      stateful: True
+      path_length_tolerance: 0.5 # meters
+      stateful: True # 
     FollowPath:
        # CHANGED from regulated pure persuit controller -> to vector persuit controller
         plugin: "vector_pursuit_controller::VectorPursuitController"
-        k: 5.0
+        k: 5.0 # rotation_time = k * translation_time.
         desired_linear_vel: 0.5
         min_turning_radius: 0.25
         lookahead_dist: 1.0
@@ -123,6 +124,13 @@ controller_server:
         use_interpolation: true
         use_heading_from_path: false
         approach_velocity_scaling_dist: 1.0
+
+map_server:
+  ros__parameters:
+    use_sim_time: False
+    # Overridden in launch by the "map" launch configuration or provided default value.
+    # To use in yaml, remove the default "map" value in the tb3_simulation_launch.py file & provide full path to map below.
+    yaml_filename: os.path.join(get_package_share_directory('avc_car'), 'maps', 'map.yaml') # CHANGED from "" - might be wrong, double check this
 
 local_costmap:
   local_costmap:
