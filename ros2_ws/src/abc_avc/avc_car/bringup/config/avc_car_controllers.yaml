@@ -15,11 +15,12 @@ bicycle_steering_controller:
     wheelbase: 0.325
     traction_wheel_radius: 0.05
 
-    reference_timeout: 2.0
+    reference_timeout: 2.0 # stops the controller if it stops receiving instructions (velocity) 
 
-    open_loop: false
-    position_feedback: false
-    velocity_rolling_window_size: 10
+    open_loop: false # open loop = DOESN't check with encoders to ensure the car is following our instructions
+                     #               and instead just continuously sends instructions without checking 
+    position_feedback: false # default false, uses encoders to give velocity feedback
+    velocity_rolling_window_size: 10 # number of velocity samples to average to compute twist velocities     
     base_frame_id: base_link
     odom_frame_id: odom
     enable_odom_tf: true

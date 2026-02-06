@@ -691,7 +691,7 @@ namespace SerialTransfer
                 }
                 std::cout << "Successfully created serial connection!" << std::endl;        
             };
-
+            
             ~SerialTransfer()
             {
                 tcsetattr(serial_port, TCSANOW, &ttyb);

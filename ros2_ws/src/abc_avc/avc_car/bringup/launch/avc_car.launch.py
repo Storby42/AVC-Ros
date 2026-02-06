@@ -71,6 +71,15 @@ def generate_launch_description():
         ]
     )
 
+    twist_mux_params = os.path.join(get_package_share_directory('avc_car'), 'config', 'twist_mux.yaml')
+    twist_mux = Node(
+        package='twist_mux',
+        executable='twist_mux',
+        parameters=[twist_mux_params],
+        remappings=[('/cmd_vel_out', '/bic_cont/reference_unstamped')], 
+        # the velocity comands are sent to the bicycle controller, which then send commands to the hardware interface
+    )
+
     control_node = Node(
         package="controller_manager",
         executable="ros2_control_node",
@@ -138,6 +147,7 @@ def generate_launch_description():
     nodes = [
         control_node,
         robot_state_pub_bicycle_node,
+        twist_mux,
         joint_state_broadcaster_spawner,
         delay_rviz_after_joint_state_broadcaster_spawner,
         delay_robot_controller_spawner_after_joint_state_broadcaster_spawner,
