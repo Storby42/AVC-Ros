@@ -76,6 +76,8 @@ def generate_launch_description():
             prefix,
         ]
     )
+
+    
     robot_description = {"robot_description": robot_description_content}
 
     rviz_config_file = PathJoinSubstitution(

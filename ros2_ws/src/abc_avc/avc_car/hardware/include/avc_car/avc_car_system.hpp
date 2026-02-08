@@ -31,7 +31,6 @@
 #include "rclcpp/time.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
-#include "avc_car/steering_traction.hpp"
 
 namespace avc_car
 {
@@ -85,15 +84,8 @@ private:
   double hw_stop_sec_;
 
   // joint names
-  // std::string steering_joint_; // ACCESS FROM cfg DIRECTLY INSTEAD
-  // std::string traction_joint_;
-
-  // ArduinoComms comms_; //TODO: connect this to whatever new thing arduino_comms.hpp is gonna be
-  // RX AT BEGINNING, DIDDLE THE VARIABLES, THEN TX AT THE END USING SERIALTRANSFER
-  SerialTransfer serial_transfer_;
-  Config cfg_;
-  ODOMETRY odometry_;
-  JETSONCOMMANDS jetson_commands_;
+  std::string steering_joint_;
+  std::string traction_joint_;
 };
 
 }  // namespace avc_car

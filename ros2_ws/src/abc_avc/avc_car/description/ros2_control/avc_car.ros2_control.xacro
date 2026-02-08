@@ -1,26 +1,31 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
 
-    <ros2_control name="RobotControl" type="system">
-        <hardware>
-            <plugin>bicdrive_arduino/CarlikeBotSystemHardware</plugin>
-            <param name="front_wheel_name">virtual_front_wheel_joint</param> <!-- uhh TODO: might have to fix stuff with{prefix} if stuff is connected that way in the other urdf files-->
-            <param name="rear_wheel_name">virtual_rear_wheel_joint</param>
-            <param name="loop_rate">30</param>
-            <param name="device">/dev/serial/by-id/usb-1a86_USB2.0-Ser_-if00-port0</param> 
-            <param name="baud_rate">9600</param>
-            <param name="timeout_ms">1000</param>
-        </hardware>
+  <xacro:macro name="avc_car_ros2_control" params="name prefix">
 
-        <joint name="virtual_front_wheel_joint">
-            <command_interface name="position"/>
-            <state_interface name="position"/>
-        </joint>
-        
-        <joint name="virtual_rear_wheel_joint">
-            <command_interface name="velocity"/>
-            <state_interface name="velocity"/>
-            <state_interface name="position"/> <!-- (TODO: comment if we're NOT using joint_state_controller)-->
-        </joint>
+    <ros2_control name="${name}" type="system">
+      <hardware>
+        <plugin>avc_car/avc_carSystemHardware</plugin>
+        <param name="example_param_hw_start_duration_sec">0</param>
+        <param name="example_param_hw_stop_duration_sec">3.0</param>
+        <param name="loop_rate">69</param>
+        <param name="device">/dev/ttyACM0</param> 
+        <param name="baud_rate">9600</param>
+        <param name="timeout_ms">1000</param>
+        <param name="traction_cal">0.00550369458</param>
+        <param name="steering_cal">1.0</param>
+      </hardware>
+      <joint name="${prefix}virtual_front_wheel_joint">
+        <command_interface name="position"/>
+        <state_interface name="position"/>
+      </joint>
+      <joint name="${prefix}virtual_rear_wheel_joint">
+        <command_interface name="velocity"/>
+        <state_interface name="velocity"/>
+        <state_interface name="position"/>
+      </joint>
     </ros2_control>
+
+  </xacro:macro>
+
 </robot>

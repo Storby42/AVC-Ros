@@ -7,10 +7,12 @@ struct __attribute__((packed)) JETSONCOMMANDS {
 } jetsonCommands;
 
 struct __attribute__((packed)) ODOMETRY {
-  float x;
+  float x; //in rad unit
   float y;
-  float theta;
-  float motorSpeed;
+  float theta; //in deg
+  float motorVelocity;
+  float motorPosition;
+  float servoPosition;
   int status;
 } odometry;
 }
