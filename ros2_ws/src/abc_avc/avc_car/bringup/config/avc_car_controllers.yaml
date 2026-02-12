@@ -12,8 +12,8 @@ bicycle_steering_controller:
 
     traction_joints_names: ['virtual_rear_wheel_joint']
     steering_joints_names: ['virtual_front_wheel_joint']
-    wheelbase: 0.325
-    traction_wheel_radius: 0.05
+    wheelbase: 0.343 # front-to-back distance between wheels, is updated
+    traction_wheel_radius: 0.0685 # is updated 
 
     reference_timeout: 2.0 # stops the controller if it stops receiving instructions (velocity) 
 

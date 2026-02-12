@@ -69,6 +69,8 @@ bt_navigator_navigate_to_pose_rclcpp_node:
   ros__parameters:
     use_sim_time: False
 
+# 1. PARAMETERS FOR PATH CREATION
+
 controller_server:
   ros__parameters:
     use_sim_time: False
@@ -136,6 +138,7 @@ controller_server:
         use_heading_from_path: true # set to true because we're using the smac path planner
                                     # and the smac path planner knows we're using an ackermann/bicycle type car
                                     # so the heading will be the correct orientation based on the car and ready to complete next maneuvers
+# 2. PARAMETERS FOR COSTMAP
 
 map_server:
   ros__parameters:
@@ -143,49 +146,39 @@ map_server:
     # Overridden in launch by the "map" launch configuration or provided default value.
     # To use in yaml, remove the default "map" value in the tb3_simulation_launch.py file & provide full path to map below.
     yaml_filename: "" # TODO ^^ so we dont have to say the map every time? ????? 
+    save_map_timeout: 5.0 # TODO: idk if this is necessary ..., time before timeout?
+    map_subscribe_transient_local: True
 
 # local costmap is the area around the robot (based on odom) in order to avoid obstacles
+# still uses global map to correct for absolute position 
 local_costmap:
   local_costmap:
     ros__parameters:
-      update_frequency: 5.0
+      update_frequency: 5.0 
       publish_frequency: 2.0
       global_frame: odom
       robot_base_frame: base_link
       use_sim_time: False
-      rolling_window: true
+      rolling_window: true # if the costmap moves along with the robot
+      
+      # dimnesions of the costmap itself (meters)
       width: 3
       height: 3
-      resolution: 0.05
-      footprint: "[ [0.1, 0.1], [0.1, -0.1], [-0.1, -0.1], [-0.1, 0.1] ]"
-      plugins: ["voxel_layer", "inflation_layer"]
+      resolution: 0.05 # meters per cell
+
+      # size of robot relative to base_link, defined by 2D points
+      footprint: "[ [0.381, 0.436], [0.381, -0.436], [-0.381, -0.436], [-0.381, 0.436] ]"
+      footprint_padding: 0.01 # default
+      
+      # NOT using voxel_layer because we don't really need height; the height of the obstacles won't affect costmap, and the obstacles are static
+      # NOT using static_layer because this is a rolling window, and a static map wouldn't work
+      plugins: ["inflation_layer"]
+
+      # inflation layer creates the "cost" in the costmap
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.0 # decay factor across inflation radius
-        inflation_radius: 0.55 # radius to inflate costmap around lethal obstacles
-      voxel_layer:
-        plugin: "nav2_costmap_2d::VoxelLayer"
-        enabled: True
-        publish_voxel_map: True
-        origin_z: 0.0
-        z_resolution: 0.05
-        z_voxels: 16
-        max_obstacle_height: 2.0
-        mark_threshold: 0
-        observation_sources: scan
-        scan:
-          topic: /scan
-          max_obstacle_height: 2.0
-          clearing: True
-          marking: True
-          data_type: "LaserScan"
-          raytrace_max_range: 3.0
-          raytrace_min_range: 0.0
-          obstacle_max_range: 2.5
-          obstacle_min_range: 0.0
-      static_layer:
-        plugin: "nav2_costmap_2d::StaticLayer"
-        map_subscribe_transient_local: True
+        inflation_radius: 0.35 # radius to inflate costmap around lethal obstacles
       always_send_full_costmap: True
 
 global_costmap:
@@ -196,47 +189,26 @@ global_costmap:
       global_frame: map
       robot_base_frame: base_link
       use_sim_time: False
-      footprint: "[ [0.1, 0.1], [0.1, -0.1], [-0.1, -0.1], [-0.1, 0.1] ]" # adjust this
+      
+      # size of robot relative to base_link, defined by 2D points
+      footprint: "[ [0.381, 0.436], [0.381, -0.436], [-0.381, -0.436], [-0.381, 0.436] ]"
+      footprint_padding: 0.01 # default
+
       resolution: 0.05
       track_unknown_space: true
-      plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
-      obstacle_layer:
-        plugin: "nav2_costmap_2d::ObstacleLayer"
-        enabled: True
-        observation_sources: scan
-        scan:
-          topic: /scan
-          max_obstacle_height: 2.0
-          clearing: True
-          marking: True
-          data_type: "LaserScan"
-          raytrace_max_range: 3.0
-          raytrace_min_range: 0.0
-          obstacle_max_range: 2.5
-          obstacle_min_range: 0.0
+      plugins: ["static_layer", ""inflation_layer"]
+
+      # static layer creates the static "map" in the costmap
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: True
+      
+      # inflation layer creates the "cost" in the costmap
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.0
-        inflation_radius: 0.55
+        inflation_radius: 0.35
       always_send_full_costmap: True
-
-map_server:
-  ros__parameters:
-    use_sim_time: False
-    # Overridden in launch by the "map" launch configuration or provided default value.
-    # To use in yaml, remove the default "map" value in the tb3_simulation_launch.py file & provide full path to map below.
-    yaml_filename: ""
-
-map_saver:
-  ros__parameters:
-    use_sim_time: False
-    save_map_timeout: 5.0
-    free_thresh_default: 0.25
-    occupied_thresh_default: 0.65
-    map_subscribe_transient_local: True
 
 planner_server:
   ros__parameters:

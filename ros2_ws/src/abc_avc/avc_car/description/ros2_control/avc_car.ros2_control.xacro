@@ -12,8 +12,10 @@
         <param name="device">/dev/ttyACM0</param> 
         <param name="baud_rate">9600</param>
         <param name="timeout_ms">1000</param>
-        <param name="traction_cal">0.00550369458</param>
+        <param name="traction_cal">3.961743677</param>
         <param name="steering_cal">1.0</param>
+        <param name="servo_vel">7.563093425</param>
+        <param name="servo_offset">90.0</param>
       </hardware>
       <joint name="${prefix}virtual_front_wheel_joint">
         <command_interface name="position"/>

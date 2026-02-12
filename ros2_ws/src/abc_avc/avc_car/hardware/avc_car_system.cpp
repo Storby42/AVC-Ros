@@ -29,6 +29,10 @@
 #include "rclcpp/rclcpp.hpp"
 
 SerialTransfer::SerialTransfer* PicoTransfer;
+double prev_time;
+float servo_vel = info_.hardware_parameters["servo_vel"];
+float sim_servo_pos = 0;
+float servo_offset = info_.hardware_parameters["servo_offset"];
 
 namespace avc_car
 {
@@ -191,6 +195,8 @@ hardware_interface::CallbackReturn avc_carSystemHardware::on_activate(
   }
 
   PicoTransfer = new SerialTransfer::SerialTransfer(info_.hardware_parameters["device"].c_str(), std::stoi(info_.hardware_parameters["baud_rate"]));
+  rclcpp::Time current_time = node->get_clock()->now();
+  previous_time = current_time.seconds();
 
   // command and state should be equal when starting
   for (const auto & [name, descr] : joint_command_interfaces_)
@@ -239,7 +245,7 @@ hardware_interface::return_type avc_carSystemHardware::read(
   //   get_state(traction_joint_ + "/" + hardware_interface::HW_IF_POSITION) +
   //     get_command(traction_joint_ + "/" + hardware_interface::HW_IF_VELOCITY) * period.seconds());
   
-  // ----------------------  rx, receive state data from pico ---------------------- 
+  // ----------------------  receive state data from pico ---------------------- 
   // Measure how long the receive + state update section takes.
   auto section_start = std::chrono::high_resolution_clock::now();
 
@@ -249,9 +255,16 @@ hardware_interface::return_type avc_carSystemHardware::read(
     recSizePico = PicoTransfer -> rxObj(odometry, recSizePico);
   }
 
+  // calc approximated servo position (not given by pico)
+  rclcpp::Time current_time = node->get_clock()->now();
+  double deltaTime = current_time.seconds() - prev_time;
+
+  float direction = (jetsonCommands.steering_angle-sim_servo_pos)/abs(jetsonCommands.steering_angle-sim_servo_pos)
+  sim_servo_pos += direction*min(abs(jetsonCommands.steering_angle-sim_servo_pos), deltaTime*servo_vel);
+
   set_state(
     steering_joint_ + "/" + hardware_interface::HW_IF_POSITION,
-    static_cast<double>(odometry.servoPosition));
+    static_cast<double>(sim_servo_pos));
 
   set_state(
     traction_joint_ + "/" + hardware_interface::HW_IF_VELOCITY,
@@ -263,6 +276,7 @@ hardware_interface::return_type avc_carSystemHardware::read(
   auto section_end = std::chrono::high_resolution_clock::now();
   auto section_us = std::chrono::duration_cast<std::chrono::microseconds>(section_end - section_start).count();
   double section_ms = static_cast<double>(section_us) / 1000.0;
+  
   // Throttle the timing log to avoid flooding the console.
   RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000,
     "avc_car_system: odometry rx + state update took %.3f ms (%lld us)",
@@ -305,11 +319,12 @@ hardware_interface::return_type avc_car ::avc_carSystemHardware::write(
   //    << "\t"
   //    << "velocity: " << get_command(traction_joint_ + "/" + hardware_interface::HW_IF_VELOCITY)
   //    << " for joint '" << traction_joint_ << "'";
+  // END: This part here is for exemplary purposes - Please do not copy to your production code
 
   // ---------------------- send data to pico ----------------------
   // use this variable to keep track of how many bytes we're stuffing in the transmit buffer
   jetsonCommands.onoff = false;
-  jetsonCommands.steering_angle = static_cast<float>(get_command(steering_joint_ + "/" + hardware_interface::HW_IF_POSITION));
+  jetsonCommands.steering_angle = static_cast<float>(get_command(steering_joint_ + "/" + hardware_interface::HW_IF_POSITION))+servo_offset;
   jetsonCommands.target_velocity = static_cast<float>(get_command(traction_joint_ + "/" + hardware_interface::HW_IF_VELOCITY));
 
   uint16_t sendSizeCmd = 0;
@@ -319,7 +334,6 @@ hardware_interface::return_type avc_car ::avc_carSystemHardware::write(
   PicoTransfer -> sendData(sendSizeCmd);
 
   RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 500, "%s", ss.str().c_str());
-  // END: This part here is for exemplary purposes - Please do not copy to your production code
 
   return hardware_interface::return_type::OK;
 }
