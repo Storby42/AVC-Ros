@@ -9,6 +9,8 @@ width = 100
 height = 80
 map_conversion=20*feet_to_meters
 
+# starts at (0,0) bottom left with frame of width 100, height 80
+# indexes through buckets from bottom right -> clockwise
 buckets=np.array([[80,20], [50,25],[50,35],[20,20],[20,60],[50,57.5],[50,62.5],[80,60]])
 ramp=[16,40]
 
