@@ -28,14 +28,17 @@
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "rclcpp/rclcpp.hpp"
 
-SerialTransfer::SerialTransfer* PicoTransfer;
-double prev_time;
-float servo_vel = info_.hardware_parameters["servo_vel"];
-float sim_servo_pos = 0;
-float servo_offset = info_.hardware_parameters["servo_offset"];
 
 namespace avc_car
 {
+
+SerialTransfer::SerialTransfer* PicoTransfer;
+double prev_time;
+float sim_servo_pos = 0;
+float servo_vel = 0;
+float servo_offset = 0;
+
+
 hardware_interface::CallbackReturn avc_carSystemHardware::on_init(
   const hardware_interface::HardwareComponentInterfaceParams & params)
 {
@@ -154,6 +157,9 @@ hardware_interface::CallbackReturn avc_carSystemHardware::on_init(
   hw_stop_sec_ = std::stod(info_.hardware_parameters["example_param_hw_stop_duration_sec"]);
   // // END: This part here is for exemplary purposes - Please do not copy to your production code
 
+  servo_vel = std::stof(info_.hardware_parameters["servo_vel"]);
+  servo_offset = std::stof(info_.hardware_parameters["servo_offset"]);
+
   return hardware_interface::CallbackReturn::SUCCESS;
 }
 
@@ -195,8 +201,8 @@ hardware_interface::CallbackReturn avc_carSystemHardware::on_activate(
   }
 
   PicoTransfer = new SerialTransfer::SerialTransfer(info_.hardware_parameters["device"].c_str(), std::stoi(info_.hardware_parameters["baud_rate"]));
-  rclcpp::Time current_time = node->get_clock()->now();
-  previous_time = current_time.seconds();
+  rclcpp::Time current_time = get_node()->get_clock()->now();
+  prev_time = current_time.seconds();
 
   // command and state should be equal when starting
   for (const auto & [name, descr] : joint_command_interfaces_)
@@ -256,11 +262,16 @@ hardware_interface::return_type avc_carSystemHardware::read(
   }
 
   // calc approximated servo position (not given by pico)
-  rclcpp::Time current_time = node->get_clock()->now();
+  rclcpp::Time current_time = get_node()->get_clock()->now();
   double deltaTime = current_time.seconds() - prev_time;
 
-  float direction = (jetsonCommands.steering_angle-sim_servo_pos)/abs(jetsonCommands.steering_angle-sim_servo_pos)
-  sim_servo_pos += direction*min(abs(jetsonCommands.steering_angle-sim_servo_pos), deltaTime*servo_vel);
+  float diff = jetsonCommands.steering_angle - sim_servo_pos;
+  float direction = 0.0f;
+  if (diff != 0.0f) {
+    direction = diff / std::fabs(diff);
+  }
+  float step = std::min(static_cast<float>(std::fabs(diff)), static_cast<float>(deltaTime * servo_vel));
+  sim_servo_pos += direction * step;
 
   set_state(
     steering_joint_ + "/" + hardware_interface::HW_IF_POSITION,
