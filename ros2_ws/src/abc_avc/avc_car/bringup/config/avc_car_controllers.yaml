@@ -1,6 +1,6 @@
 controller_manager:
   ros__parameters:
-    update_rate: 300  # Hz
+    update_rate: 500  # Hz
 
     joint_state_broadcaster:
       type: joint_state_broadcaster/JointStateBroadcaster
@@ -15,7 +15,7 @@ bicycle_steering_controller:
     wheelbase: 0.343 # front-to-back distance between wheels, is updated
     traction_wheel_radius: 0.0685 # is updated 
 
-    reference_timeout: 2.0 # stops the controller if it stops receiving instructions (velocity) 
+    reference_timeout: 0.1 # stops the controller if it stops receiving instructions (velocity) 
 
     open_loop: false # open loop = DOESN't check with encoders to ensure the car is following our instructions
                      #               and instead just continuously sends instructions without checking 
@@ -26,3 +26,6 @@ bicycle_steering_controller:
     enable_odom_tf: true
     twist_covariance_diagonal: [0.0, 7.0, 14.0, 21.0, 28.0, 35.0]
     pose_covariance_diagonal: [0.0, 7.0, 14.0, 21.0, 28.0, 35.0]
+
+#pose_broadcaster:
+ # ros__parameters:

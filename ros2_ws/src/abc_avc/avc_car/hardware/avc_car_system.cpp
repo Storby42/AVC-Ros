@@ -33,10 +33,14 @@ namespace avc_car
 {
 
 SerialTransfer::SerialTransfer* PicoTransfer;
+// TODO: Move this stuff to the avc_car_system header file
 double prev_time;
 float sim_servo_pos = 0;
 float servo_vel = 0;
 float servo_offset = 0;
+float traction_cal = 0;
+float steering_cal = 0;
+float wheel_radius = 0;
 
 
 hardware_interface::CallbackReturn avc_carSystemHardware::on_init(
@@ -64,6 +68,7 @@ hardware_interface::CallbackReturn avc_carSystemHardware::on_init(
   for (const hardware_interface::ComponentInfo & joint : info_.joints)
   {
     bool joint_is_steering = joint.name.find("front") != std::string::npos;
+    bool joint_is_traction = joint.name.find("rear") != std::string::npos;
 
     // Steering joints have a position command interface and a position state interface
     if (joint_is_steering)
@@ -103,7 +108,7 @@ hardware_interface::CallbackReturn avc_carSystemHardware::on_init(
         return hardware_interface::CallbackReturn::ERROR;
       }
     }
-    else
+    else if(joint_is_traction)
     {
       RCLCPP_INFO(get_logger(), "Joint '%s' is a drive joint.", joint.name.c_str());
       traction_joint_ = joint.name;
@@ -151,6 +156,37 @@ hardware_interface::CallbackReturn avc_carSystemHardware::on_init(
     }
   }
 
+  //Get sensor state interfaces
+  // for (const hardware_interface::ComponentInfo & sensor : info_.sensors)
+  // {
+  //   if(sensor.name.find("position") != std::string::npos){
+  //     if(sensor.name.find(".x") != std::string::npos){
+  //       posx_sensor_ = sensor;
+  //     }
+  //     if(sensor.name.find(".y") != std::string::npos){
+  //       posy_sensor_ = sensor;
+  //     }
+  //     if(sensor.name.find(".z") != std::string::npos){
+  //       posz_sensor_ = sensor;
+  //     }
+  //   }
+  //   if(sensor.name.find("orientation") != std::string::npos){
+  //     if(sensor.name.find(".x") != std::string::npos){
+  //       orix_sensor_ = sensor;
+  //     }
+  //     if(sensor.name.find(".y") != std::string::npos){
+  //       oriy_sensor_ = sensor;
+  //     }
+  //     if(sensor.name.find(".z") != std::string::npos){
+  //       oriz_sensor_ = sensor;
+  //     }
+  //     if(sensor.name.find(".w") != std::string::npos){
+  //       oriw_sensor_ = sensor;
+  //     }
+  //   }
+
+  // }
+
   // // BEGIN: This part here is for exemplary purposes - Please do not copy to your production
   // code
   hw_start_sec_ = std::stod(info_.hardware_parameters["example_param_hw_start_duration_sec"]);
@@ -159,6 +195,9 @@ hardware_interface::CallbackReturn avc_carSystemHardware::on_init(
 
   servo_vel = std::stof(info_.hardware_parameters["servo_vel"]);
   servo_offset = std::stof(info_.hardware_parameters["servo_offset"]);
+  traction_cal = std::stof(info_.hardware_parameters["traction_cal"]);
+  steering_cal = std::stof(info_.hardware_parameters["steering_cal"]);
+  wheel_radius = std::stof(info_.hardware_parameters["wheel_radius"]);
 
   return hardware_interface::CallbackReturn::SUCCESS;
 }
@@ -275,17 +314,23 @@ hardware_interface::return_type avc_carSystemHardware::read(
 
   set_state(
     steering_joint_ + "/" + hardware_interface::HW_IF_POSITION,
-    static_cast<double>(sim_servo_pos));
+    (((static_cast<double>(sim_servo_pos))-servo_offset)/steering_cal));
 
   set_state(
     traction_joint_ + "/" + hardware_interface::HW_IF_VELOCITY,
-    static_cast<double>(odometry.motorVelocity));
+    ((static_cast<double>(odometry.motorVelocity))/traction_cal));
   set_state(
     traction_joint_ + "/" + hardware_interface::HW_IF_POSITION,
-    static_cast<double>(odometry.motorPosition));
+    ((static_cast<double>(odometry.motorPosition))/traction_cal));
 
   auto section_end = std::chrono::high_resolution_clock::now();
   auto section_us = std::chrono::duration_cast<std::chrono::microseconds>(section_end - section_start).count();
+  
+  // TODO: do quat bullshit here
+  // funni reverse radius thing with traction_cal and wheel_radius
+  
+  
+  
   double section_ms = static_cast<double>(section_us) / 1000.0;
   
   // Throttle the timing log to avoid flooding the console.
@@ -335,8 +380,8 @@ hardware_interface::return_type avc_car ::avc_carSystemHardware::write(
   // ---------------------- send data to pico ----------------------
   // use this variable to keep track of how many bytes we're stuffing in the transmit buffer
   jetsonCommands.onoff = false;
-  jetsonCommands.steering_angle = static_cast<float>(get_command(steering_joint_ + "/" + hardware_interface::HW_IF_POSITION))+servo_offset;
-  jetsonCommands.target_velocity = static_cast<float>(get_command(traction_joint_ + "/" + hardware_interface::HW_IF_VELOCITY));
+  jetsonCommands.steering_angle = (static_cast<float>(get_command(steering_joint_ + "/" + hardware_interface::HW_IF_POSITION))*steering_cal)+servo_offset;
+  jetsonCommands.target_velocity = (static_cast<float>(get_command(traction_joint_ + "/" + hardware_interface::HW_IF_VELOCITY))*traction_cal);
 
   uint16_t sendSizeCmd = 0;
   // Stuff buffer with struct

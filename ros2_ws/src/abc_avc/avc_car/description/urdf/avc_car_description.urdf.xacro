@@ -6,9 +6,9 @@
   <!-- Constants for robot dimensions, everything has been changed except mass -->
   <xacro:property name="PI" value="3.1415926535897931"/>
   <xacro:property name="base_mass" value="4.0" /> <!-- arbitrary value for base mass -->
-  <xacro:property name="base_width" value="0.692" /><!-- side-to-side distance between wheels --> 
-  <xacro:property name="base_length" value="0.872" /> <!-- length of car -->
-  <xacro:property name="base_height" value="0.2921" /> <!-- height of car -->
+  <xacro:property name="base_width" value="0.38" /><!-- side-to-side distance between wheels --> 
+  <xacro:property name="base_length" value="0.56" /> <!-- length of car -->
+  <xacro:property name="base_height" value="0.20" /> <!-- height of car -->
   <xacro:property name="wheelbase" value="0.343" /> <!-- front-to-back distance between wheels --> 
   <xacro:property name="wheel_mass" value="0.34055" /> <!-- arbitrary value for wheel mass -->
   <xacro:property name="wheel_len" value="0.07" /> <!-- thickness of wheel -->
