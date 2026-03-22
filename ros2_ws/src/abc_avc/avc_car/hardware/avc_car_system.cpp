@@ -34,13 +34,7 @@ namespace avc_car
 
 SerialTransfer::SerialTransfer* PicoTransfer;
 // TODO: Move this stuff to the avc_car_system header file
-double prev_time;
-float sim_servo_pos = 0;
-float servo_vel = 0;
-float servo_offset = 0;
-float traction_cal = 0;
-float steering_cal = 0;
-float wheel_radius = 0;
+
 
 
 hardware_interface::CallbackReturn avc_carSystemHardware::on_init(
@@ -157,35 +151,13 @@ hardware_interface::CallbackReturn avc_carSystemHardware::on_init(
   }
 
   //Get sensor state interfaces
-  // for (const hardware_interface::ComponentInfo & sensor : info_.sensors)
-  // {
-  //   if(sensor.name.find("position") != std::string::npos){
-  //     if(sensor.name.find(".x") != std::string::npos){
-  //       posx_sensor_ = sensor;
-  //     }
-  //     if(sensor.name.find(".y") != std::string::npos){
-  //       posy_sensor_ = sensor;
-  //     }
-  //     if(sensor.name.find(".z") != std::string::npos){
-  //       posz_sensor_ = sensor;
-  //     }
-  //   }
-  //   if(sensor.name.find("orientation") != std::string::npos){
-  //     if(sensor.name.find(".x") != std::string::npos){
-  //       orix_sensor_ = sensor;
-  //     }
-  //     if(sensor.name.find(".y") != std::string::npos){
-  //       oriy_sensor_ = sensor;
-  //     }
-  //     if(sensor.name.find(".z") != std::string::npos){
-  //       oriz_sensor_ = sensor;
-  //     }
-  //     if(sensor.name.find(".w") != std::string::npos){
-  //       oriw_sensor_ = sensor;
-  //     }
-  //   }
-
-  // }
+  for (const hardware_interface::ComponentInfo & sensor : info_.sensors)
+  {
+    if (sensor.name.find("fused_odom") != std::string::npos)
+    {
+      pose_sensor_ = sensor.name;
+    }
+  }
 
   // // BEGIN: This part here is for exemplary purposes - Please do not copy to your production
   // code
@@ -328,7 +300,18 @@ hardware_interface::return_type avc_carSystemHardware::read(
   
   // TODO: do quat bullshit here
   // funni reverse radius thing with traction_cal and wheel_radius
-  
+  // Publish odometry to sensor state interfaces (only touch sensors that exist).
+  set_state(pose_sensor_ + "/position.x", static_cast<double>(odometry.x) / traction_cal);
+  set_state(pose_sensor_ + "/position.y", static_cast<double>(odometry.y) / traction_cal);
+  // If the Pico provides a z value, replace the 0.0 below with odometry.z
+  set_state(pose_sensor_ + "/position.z", 0.0);
+
+  // Publish a default (identity) quaternion for orientation sensors unless you
+  // have a yaw/quat from the Pico (then compute/use that instead).
+  set_state(pose_sensor_ + "/orientation.x", 0.0);
+  set_state(pose_sensor_ + "/orientation.y", 0.0);
+  set_state(pose_sensor_ + "/orientation.z", static_cast<double>(sin(odometry.theta/2)));
+  set_state(pose_sensor_ + "/orientation.w", static_cast<double>(cos(odometry.theta/2)));
   
   
   double section_ms = static_cast<double>(section_us) / 1000.0;
@@ -351,7 +334,6 @@ hardware_interface::return_type avc_carSystemHardware::read(
      << "\t"
      << "velocity: " << get_state(traction_joint_ + "/" + hardware_interface::HW_IF_VELOCITY)
      << " for joint '" << traction_joint_ << "'";
-  
   
 
   RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 500, "%s", ss.str().c_str());

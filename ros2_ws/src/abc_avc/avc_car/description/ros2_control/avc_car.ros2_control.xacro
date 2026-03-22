@@ -9,7 +9,7 @@
         <param name="example_param_hw_start_duration_sec">0</param>
         <param name="example_param_hw_stop_duration_sec">3.0</param>
         <param name="loop_rate">1000</param>
-        <param name="device">/dev/ttyACM1</param> 
+        <param name="device">/dev/ttyACM0</param> 
         <param name="baud_rate">9600</param>
         <param name="timeout_ms">150</param>
         <param name="traction_cal">-12.7</param>
@@ -27,7 +27,7 @@
         <state_interface name="velocity"/>
         <state_interface name="position"/>
       </joint>
-      <!-- <sensor name="${prefix}fused_odom">
+      <sensor name="${prefix}fused_odom">
         <state_interface name="position.x"/>
         <state_interface name="position.y"/>
         <state_interface name="position.z"/>
@@ -35,7 +35,7 @@
         <state_interface name="orientation.y"/>
         <state_interface name="orientation.z"/>
         <state_interface name="orientation.w"/>
-      </sensor> -->
+      </sensor>
     </ros2_control>
 
   </xacro:macro>
