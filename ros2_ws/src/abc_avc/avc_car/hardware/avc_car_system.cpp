@@ -13,7 +13,8 @@
 // limitations under the License.
 
 #include "avc_car/avc_car_system.hpp"
-#include "avc_car/serialcomms.hpp"
+#include "avc_car/SerialTransfer.hpp"
+#include "avc_car/pico_structs.hpp"
 
 #include <chrono>
 #include <cmath>
@@ -27,8 +28,15 @@
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "rclcpp/rclcpp.hpp"
 
+
 namespace avc_car
 {
+
+SerialTransfer::SerialTransfer* PicoTransfer;
+// TODO: Move this stuff to the avc_car_system header file
+
+
+
 hardware_interface::CallbackReturn avc_carSystemHardware::on_init(
   const hardware_interface::HardwareComponentInterfaceParams & params)
 {
@@ -38,6 +46,7 @@ hardware_interface::CallbackReturn avc_carSystemHardware::on_init(
   {
     return hardware_interface::CallbackReturn::ERROR;
   }
+  RCLCPP_INFO(get_logger(), info_.hardware_parameters["loop_rate"].c_str());
 
   // Check if the number of joints is correct based on the mode of operation
   if (info_.joints.size() != 2)
@@ -53,6 +62,7 @@ hardware_interface::CallbackReturn avc_carSystemHardware::on_init(
   for (const hardware_interface::ComponentInfo & joint : info_.joints)
   {
     bool joint_is_steering = joint.name.find("front") != std::string::npos;
+    bool joint_is_traction = joint.name.find("rear") != std::string::npos;
 
     // Steering joints have a position command interface and a position state interface
     if (joint_is_steering)
@@ -92,7 +102,7 @@ hardware_interface::CallbackReturn avc_carSystemHardware::on_init(
         return hardware_interface::CallbackReturn::ERROR;
       }
     }
-    else
+    else if(joint_is_traction)
     {
       RCLCPP_INFO(get_logger(), "Joint '%s' is a drive joint.", joint.name.c_str());
       traction_joint_ = joint.name;
@@ -140,11 +150,26 @@ hardware_interface::CallbackReturn avc_carSystemHardware::on_init(
     }
   }
 
+  //Get sensor state interfaces
+  for (const hardware_interface::ComponentInfo & sensor : info_.sensors)
+  {
+    if (sensor.name.find("fused_odom") != std::string::npos)
+    {
+      pose_sensor_ = sensor.name;
+    }
+  }
+
   // // BEGIN: This part here is for exemplary purposes - Please do not copy to your production
   // code
   hw_start_sec_ = std::stod(info_.hardware_parameters["example_param_hw_start_duration_sec"]);
   hw_stop_sec_ = std::stod(info_.hardware_parameters["example_param_hw_stop_duration_sec"]);
   // // END: This part here is for exemplary purposes - Please do not copy to your production code
+
+  servo_vel = std::stof(info_.hardware_parameters["servo_vel"]);
+  servo_offset = std::stof(info_.hardware_parameters["servo_offset"]);
+  traction_cal = std::stof(info_.hardware_parameters["traction_cal"]);
+  steering_cal = std::stof(info_.hardware_parameters["steering_cal"]);
+  wheel_radius = std::stof(info_.hardware_parameters["wheel_radius"]);
 
   return hardware_interface::CallbackReturn::SUCCESS;
 }
@@ -186,6 +211,10 @@ hardware_interface::CallbackReturn avc_carSystemHardware::on_activate(
     RCLCPP_INFO(get_logger(), "%.1f seconds left...", hw_start_sec_ - i);
   }
 
+  PicoTransfer = new SerialTransfer::SerialTransfer(info_.hardware_parameters["device"].c_str(), std::stoi(info_.hardware_parameters["baud_rate"]));
+  rclcpp::Time current_time = get_node()->get_clock()->now();
+  prev_time = current_time.seconds();
+
   // command and state should be equal when starting
   for (const auto & [name, descr] : joint_command_interfaces_)
   {
@@ -202,6 +231,8 @@ hardware_interface::CallbackReturn avc_carSystemHardware::on_deactivate(
 {
   // BEGIN: This part here is for exemplary purposes - Please do not copy to your production code
   RCLCPP_INFO(get_logger(), "Deactivating ...please wait...");
+  
+  PicoTransfer = nullptr;
 
   for (auto i = 0; i < hw_stop_sec_; i++)
   {
@@ -219,17 +250,76 @@ hardware_interface::return_type avc_carSystemHardware::read(
 {
   // BEGIN: This part here is for exemplary purposes - Please do not copy to your production code
   // update states from commands and integrate velocity to position
+  // set_state(
+  //   steering_joint_ + "/" + hardware_interface::HW_IF_POSITION,
+  //   get_command(steering_joint_ + "/" + hardware_interface::HW_IF_POSITION));
+
+  // set_state(
+  //   traction_joint_ + "/" + hardware_interface::HW_IF_VELOCITY,
+  //   get_command(traction_joint_ + "/" + hardware_interface::HW_IF_VELOCITY));
+  // set_state(
+  //   traction_joint_ + "/" + hardware_interface::HW_IF_POSITION,
+  //   get_state(traction_joint_ + "/" + hardware_interface::HW_IF_POSITION) +
+  //     get_command(traction_joint_ + "/" + hardware_interface::HW_IF_VELOCITY) * period.seconds());
+  
+  // ----------------------  receive state data from pico ---------------------- 
+  // Measure how long the receive + state update section takes.
+  auto section_start = std::chrono::high_resolution_clock::now();
+
+  if (PicoTransfer -> available())
+  {
+    uint16_t recSizePico = 0;
+    recSizePico = PicoTransfer -> rxObj(odometry, recSizePico);
+  }
+
+  // calc approximated servo position (not given by pico)
+  rclcpp::Time current_time = get_node()->get_clock()->now();
+  double deltaTime = current_time.seconds() - prev_time;
+
+  float diff = jetsonCommands.steering_angle - sim_servo_pos;
+  float direction = 0.0f;
+  if (diff != 0.0f) {
+    direction = diff / std::fabs(diff);
+  }
+  float step = std::min(static_cast<float>(std::fabs(diff)), static_cast<float>(deltaTime * servo_vel));
+  sim_servo_pos += direction * step;
+
   set_state(
     steering_joint_ + "/" + hardware_interface::HW_IF_POSITION,
-    get_command(steering_joint_ + "/" + hardware_interface::HW_IF_POSITION));
+    (((static_cast<double>(sim_servo_pos))-servo_offset)/steering_cal));
 
   set_state(
     traction_joint_ + "/" + hardware_interface::HW_IF_VELOCITY,
-    get_command(traction_joint_ + "/" + hardware_interface::HW_IF_VELOCITY));
+    ((static_cast<double>(odometry.motorVelocity))/traction_cal));
   set_state(
     traction_joint_ + "/" + hardware_interface::HW_IF_POSITION,
-    get_state(traction_joint_ + "/" + hardware_interface::HW_IF_POSITION) +
-      get_command(traction_joint_ + "/" + hardware_interface::HW_IF_VELOCITY) * period.seconds());
+    ((static_cast<double>(odometry.motorPosition))/traction_cal));
+
+  auto section_end = std::chrono::high_resolution_clock::now();
+  auto section_us = std::chrono::duration_cast<std::chrono::microseconds>(section_end - section_start).count();
+  
+  // TODO: do quat bullshit here
+  // funni reverse radius thing with traction_cal and wheel_radius
+  // Publish odometry to sensor state interfaces (only touch sensors that exist).
+  set_state(pose_sensor_ + "/position.x", static_cast<double>(odometry.x) / traction_cal);
+  set_state(pose_sensor_ + "/position.y", static_cast<double>(odometry.y) / traction_cal);
+  // If the Pico provides a z value, replace the 0.0 below with odometry.z
+  set_state(pose_sensor_ + "/position.z", 0.0);
+
+  // Publish a default (identity) quaternion for orientation sensors unless you
+  // have a yaw/quat from the Pico (then compute/use that instead).
+  set_state(pose_sensor_ + "/orientation.x", 0.0);
+  set_state(pose_sensor_ + "/orientation.y", 0.0);
+  set_state(pose_sensor_ + "/orientation.z", static_cast<double>(sin(odometry.theta/2)));
+  set_state(pose_sensor_ + "/orientation.w", static_cast<double>(cos(odometry.theta/2)));
+  
+  
+  double section_ms = static_cast<double>(section_us) / 1000.0;
+  
+  // Throttle the timing log to avoid flooding the console.
+  RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000,
+    "avc_car_system: odometry rx + state update took %.3f ms (%lld us)",
+    section_ms, (long long)section_us);
 
   std::stringstream ss;
   ss << "Reading states:";
@@ -244,6 +334,7 @@ hardware_interface::return_type avc_carSystemHardware::read(
      << "\t"
      << "velocity: " << get_state(traction_joint_ + "/" + hardware_interface::HW_IF_VELOCITY)
      << " for joint '" << traction_joint_ << "'";
+  
 
   RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 500, "%s", ss.str().c_str());
 
@@ -259,16 +350,28 @@ hardware_interface::return_type avc_car ::avc_carSystemHardware::write(
   std::stringstream ss;
   ss << "Writing commands:";
 
-  ss << std::fixed << std::setprecision(2) << std::endl
-     << "\t"
-     << "position: " << get_command(steering_joint_ + "/" + hardware_interface::HW_IF_POSITION)
-     << " for joint '" << steering_joint_ << "'" << std::endl
-     << "\t"
-     << "velocity: " << get_command(traction_joint_ + "/" + hardware_interface::HW_IF_VELOCITY)
-     << " for joint '" << traction_joint_ << "'";
+  // ss << std::fixed << std::setprecision(2) << std::endl
+  //    << "\t"
+  //    << "position: " << get_command(steering_joint_ + "/" + hardware_interface::HW_IF_POSITION)
+  //    << " for joint '" << steering_joint_ << "'" << std::endl
+  //    << "\t"
+  //    << "velocity: " << get_command(traction_joint_ + "/" + hardware_interface::HW_IF_VELOCITY)
+  //    << " for joint '" << traction_joint_ << "'";
+  // END: This part here is for exemplary purposes - Please do not copy to your production code
+
+  // ---------------------- send data to pico ----------------------
+  // use this variable to keep track of how many bytes we're stuffing in the transmit buffer
+  jetsonCommands.onoff = false;
+  jetsonCommands.steering_angle = (static_cast<float>(get_command(steering_joint_ + "/" + hardware_interface::HW_IF_POSITION))*steering_cal)+servo_offset;
+  jetsonCommands.target_velocity = (static_cast<float>(get_command(traction_joint_ + "/" + hardware_interface::HW_IF_VELOCITY))*traction_cal);
+
+  uint16_t sendSizeCmd = 0;
+  // Stuff buffer with struct
+  sendSizeCmd = PicoTransfer -> txObj(jetsonCommands, sendSizeCmd);
+  // Send buffer
+  PicoTransfer -> sendData(sendSizeCmd);
 
   RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 500, "%s", ss.str().c_str());
-  // END: This part here is for exemplary purposes - Please do not copy to your production code
 
   return hardware_interface::return_type::OK;
 }

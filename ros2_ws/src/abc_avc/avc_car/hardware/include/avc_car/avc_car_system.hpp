@@ -83,9 +83,19 @@ private:
   double hw_start_sec_;
   double hw_stop_sec_;
 
+  double prev_time;
+  float sim_servo_pos = 0;
+  float servo_vel = 0;
+  float servo_offset = 0;
+  float traction_cal = 0;
+  float steering_cal = 0;
+  float wheel_radius = 0;
+
   // joint names
   std::string steering_joint_;
   std::string traction_joint_;
+
+  std::string pose_sensor_;
 };
 
 }  // namespace avc_car

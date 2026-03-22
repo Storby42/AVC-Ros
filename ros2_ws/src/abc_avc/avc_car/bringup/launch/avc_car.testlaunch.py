@@ -125,6 +125,11 @@ def generate_launch_description():
         arguments=["bicycle_steering_controller", "--param-file", robot_controllers],
         condition=UnlessCondition(remap_odometry_tf),
     )
+    robot_pose_broadcaster_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["pose_broadcaster", "--param-file", robot_controllers],
+    )
 
     # Delay rviz start after `joint_state_broadcaster`
     delay_rviz_after_joint_state_broadcaster_spawner = RegisterEventHandler(
@@ -148,7 +153,7 @@ def generate_launch_description():
         joint_state_broadcaster_spawner,
         delay_rviz_after_joint_state_broadcaster_spawner,
         delay_robot_controller_spawner_after_joint_state_broadcaster_spawner,
-
+        robot_pose_broadcaster_spawner,
     ]
 
     return LaunchDescription(declared_arguments + nodes)
