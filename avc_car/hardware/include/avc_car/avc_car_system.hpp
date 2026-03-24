@@ -27,7 +27,6 @@
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "rclcpp/clock.hpp"
 #include "rclcpp/duration.hpp"
-#include "rclcpp/logger.hpp"
 #include "rclcpp/macros.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
@@ -59,14 +58,13 @@ struct Joint
 class avc_carSystemHardware : public hardware_interface::SystemInterface
 {
 public:
-  RCLCPP_SHARED_PTR_DEFINITIONS(avc_carSystemHardware);
+  RCLCPP_SHARED_PTR_DEFINITIONS(avc_carSystemHardware)
 
   hardware_interface::CallbackReturn on_init(
-    const hardware_interface::HardwareInfo & info) override;
+    const hardware_interface::HardwareComponentInterfaceParams & params) override;
 
-  std::vector<hardware_interface::StateInterface> export_state_interfaces() override;
-
-  std::vector<hardware_interface::CommandInterface> export_command_interfaces() override;
+  hardware_interface::CallbackReturn on_configure(
+    const rclcpp_lifecycle::State & previous_state) override;
 
   hardware_interface::CallbackReturn on_activate(
     const rclcpp_lifecycle::State & previous_state) override;
@@ -79,18 +77,6 @@ public:
 
   hardware_interface::return_type write(
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
-
-  /// Get the logger of the SystemInterface.
-  /**
-   * \return logger of the SystemInterface.
-   */
-  rclcpp::Logger get_logger() const { return *logger_; }
-
-  /// Get the clock of the SystemInterface.
-  /**
-   * \return clock of the SystemInterface.
-   */
-  rclcpp::Clock::SharedPtr get_clock() const { return clock_; }
 
 private:
   // Parameters for the avc_car simulation
@@ -105,20 +91,11 @@ private:
   float steering_cal = 0;
   float wheel_radius = 0;
 
-
-
-  // Objects for logging
-  std::shared_ptr<rclcpp::Logger> logger_;
-  rclcpp::Clock::SharedPtr clock_;
-
-
-  // std::vector<std::tuple<std::string, double, double>>
-  //   hw_interfaces_;  // name of joint, state, command
-  std::map<std::string, Joint> hw_interfaces_;
-
+  // joint names
+  std::string steering_joint_;
+  std::string traction_joint_;
 
   std::string pose_sensor_;
-
 };
 
 }  // namespace avc_car
