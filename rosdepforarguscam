@@ -1,0 +1,20 @@
+
+sudo -H apt-get install ros-jazzy-isaac-ros-common
+      ros-jazzy-camera-info-manager  \
+      ros-jazzy-isaac-ros-gxf  \
+      ros-jazzy-isaac-ros-nitros  \
+      ros-jazzy-isaac-ros-nitros-camera-info-type  \
+      ros-jazzy-isaac-ros-nitros-image-type  \
+      ros-jazzy-isaac-ros-stereo-image-proc  \
+      ros-jazzy-isaac-ros-image-proc  \
+      ros-jazzy-gxf-isaac-argus  \
+      ros-jazzy-gxf-isaac-camera-utils  \
+      ros-jazzy-gxf-isaac-atlas  \
+      ros-jazzy-gxf-isaac-gxf-helpers  \
+      ros-jazzy-gxf-isaac-messages  \
+      ros-jazzy-gxf-isaac-message-compositor  \
+      ros-jazzy-gxf-isaac-rectify  \
+      ros-jazzy-gxf-isaac-sight  \
+      ros-jazzy-gxf-isaac-tensorops  \
+      ros-jazzy-gxf-isaac-timestamp-correlator  \
+      ros-jazzy-isaac-ros-test  \

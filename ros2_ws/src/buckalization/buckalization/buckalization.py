@@ -17,17 +17,20 @@ import math
 from tf_transformations import euler_from_quaternion
 from tf_transformations import quaternion_from_euler
 import csv
+from ament_index_python.packages import get_package_share_directory
+
+import os
 
 class BuckalizationNode(Node):
     def __init__(self):
-        super().__init__('bucket_localization_node')
+        super().__init__('buckalization')
 
         # Set up subscriber and publisher nodes
         # subscribe to technoblad-- i mean vision get bucket pos, and fused odom for position and heading
         self.subscription_vision = self.create_subscription(Vector3, '/vision_measurements', self.vision_callback, 10) # PLACEHOLDER TOPIC NAME AND DATATYPE
-        self.subscription_fused_odom = self.create_subscription(Odometry, '/fused_odom', self.fusedOdom_callback, 10) # PLACEHOLDER TOPIC NAME
+        self.subscription_fused_odom = self.create_subscription(Odometry, '/odometry/global', self.fusedOdom_callback, 10) # PLACEHOLDER TOPIC NAME
 
-        self.publisher_buckalization = self.create_publisher(PoseWithCovarianceStamped, '/buckalization', 10) # proper odometry object
+        self.publisher_buckalization = self.create_publisher(PoseWithCovarianceStamped, '/buckalization', 10)
 
         self.prev_time = self.get_clock().now().nanoseconds / 10**9 # initialize time checkpoint
 
@@ -35,10 +38,16 @@ class BuckalizationNode(Node):
         self.MINIMUM_BUCKET_CONFIDENCE = .8 # percent val between 0-1
 
         self.known_buckets = []
-        with open('buckets.csv', newline='\n') as csvfile:
+
+        buckalization_dir = get_package_share_directory('buckalization') 
+        parameters_file_dir = os.path.join(buckalization_dir, 'data') 
+        parameters_file_path = os.path.join(parameters_file_dir, 'buckets.csv')
+        
+        with open(parameters_file_path, newline='\n') as csvfile:
             bucketreader = csv.reader(csvfile, delimiter=',', quotechar='|')
             for row in bucketreader:
                 self.known_buckets.append(self.Bucket(float(row[0]), float(row[1]), row[2]))
+            print("Buckets loaded")
 
         # variables for the calcs
         self.fusedOdom = None # stored as a 3 long tuple; x, y, yaw. calculated values.
@@ -193,3 +202,18 @@ class BuckalizationNode(Node):
         self.fusedOdom = (data.pose.pose.position.x, data.pose.pose.position.y, 0)
         _, _, self.fusedOdom[2] = euler_from_quaternion(data.pose.pose.orientation.x, data.pose.pose.orientation.y, data.pose.pose.orientation.z, data.pose.pose.orientation.w)
         # yaw is in rad btw
+
+def main(args=None):
+    rclpy.init(args=args)
+
+    buckalization = BuckalizationNode()
+
+    rclpy.spin(buckalization)
+
+    # Destroy the node explicitly
+    # (optional - otherwise it will be done automatically when the garbage collector destroys the node object)
+    buckalization.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
