@@ -18,9 +18,15 @@ from launch.conditions import IfCondition, UnlessCondition
 from launch.event_handlers import OnProcessExit
 from launch.substitutions import Command, FindExecutable, PathJoinSubstitution, LaunchConfiguration
 
+from launch.actions import RegisterEventHandler, IncludeLaunchDescription
+from launch.substitutions import Command, FindExecutable, PathJoinSubstitution
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from ament_index_python.packages import get_package_share_directory
+
+
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
-
+import os
 
 def generate_launch_description():
     # Declare arguments
@@ -70,28 +76,13 @@ def generate_launch_description():
             "avc_car.rviz",
         ]
     )
+   
 
-    # the steering controller libraries by default publish odometry on a separate topic than /tf
-    control_node_remapped = Node(
-        package="controller_manager",
-        executable="ros2_control_node",
-        parameters=[robot_controllers],
-        output="both",
-        remappings=[
-            ("~/robot_description", "/robot_description"),
-            ("/bicycle_steering_controller/tf_odometry", "/tf"),
-        ],
-        condition=IfCondition(remap_odometry_tf),
-    )
     control_node = Node(
         package="controller_manager",
         executable="ros2_control_node",
         parameters=[robot_controllers],
         output="both",
-        remappings=[
-            ("~/robot_description", "/robot_description"),
-        ],
-        condition=UnlessCondition(remap_odometry_tf),
     )
     robot_state_pub_bicycle_node = Node(
         package="robot_state_publisher",
@@ -111,13 +102,33 @@ def generate_launch_description():
     joint_state_broadcaster_spawner = Node(
         package="controller_manager",
         executable="spawner",
-        arguments=["joint_state_broadcaster", "--controller-manager", "/controller_manager"],
+        arguments=["joint_state_broadcaster"],
+    )
+
+    # the steering controller libraries by default publish odometry on a separate topic than /tf
+    robot_bicycle_controller_spawner_remapped = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=[
+            "bicycle_steering_controller",
+            "--param-file",
+            robot_controllers,
+            "--controller-ros-args",
+            "-r /bicycle_steering_controller/tf_odometry:=/tf",
+        ],
+        condition=IfCondition(remap_odometry_tf),
     )
 
     robot_bicycle_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
-        arguments=["bicycle_steering_controller", "--controller-manager", "/controller_manager"],
+        arguments=["bicycle_steering_controller", "--param-file", robot_controllers],
+        condition=UnlessCondition(remap_odometry_tf),
+    )
+    robot_pose_broadcaster_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["pose_broadcaster", "--param-file", robot_controllers],
     )
 
     # Delay rviz start after `joint_state_broadcaster`
@@ -132,17 +143,17 @@ def generate_launch_description():
     delay_robot_controller_spawner_after_joint_state_broadcaster_spawner = RegisterEventHandler(
         event_handler=OnProcessExit(
             target_action=joint_state_broadcaster_spawner,
-            on_exit=[robot_bicycle_controller_spawner],
+            on_exit=[robot_bicycle_controller_spawner_remapped, robot_bicycle_controller_spawner],
         )
     )
 
     nodes = [
         control_node,
-        control_node_remapped,
         robot_state_pub_bicycle_node,
         joint_state_broadcaster_spawner,
         delay_rviz_after_joint_state_broadcaster_spawner,
         delay_robot_controller_spawner_after_joint_state_broadcaster_spawner,
+        robot_pose_broadcaster_spawner,
     ]
 
     return LaunchDescription(declared_arguments + nodes)

@@ -17,7 +17,7 @@ This example shows how to use the bicycle steering controller to control a carli
 * The communication is done using proprietary API to communicate with the robot control box.
 * Data for all joints is exchanged at once.
 
-The *avc_car* URDF files can be found in ``ros2_control_demo_description/avc_car/urdf`` folder.
+The *avc_car* URDF files can be found in ``avc_car_description/avc_car/urdf`` folder.
 
 .. include:: ../../doc/run_from_docker.rst
 
@@ -123,10 +123,10 @@ Files used for this demos
 * Controllers yaml: `avc_car_controllers.yaml <https://github.com/ros-controls/ros2_control_demos/tree/{REPOS_FILE_BRANCH}/example_11/bringup/config/avc_car_controllers.yaml>`__
 * URDF file: `avc_car.urdf.xacro <https://github.com/ros-controls/ros2_control_demos/tree/{REPOS_FILE_BRANCH}/example_11/description/urdf/avc_car.urdf.xacro>`__
 
-  * Description: `avc_car_description.urdf.xacro <https://github.com/ros-controls/ros2_control_demos/tree/{REPOS_FILE_BRANCH}/ros2_control_demo_description/avc_car/urdf/avc_car_description.urdf.xacro>`__
+  * Description: `avc_car_description.urdf.xacro <https://github.com/ros-controls/ros2_control_demos/tree/{REPOS_FILE_BRANCH}/avc_car_description/avc_car/urdf/avc_car_description.urdf.xacro>`__
   * ``ros2_control`` tag: `avc_car.ros2_control.xacro <https://github.com/ros-controls/ros2_control_demos/tree/{REPOS_FILE_BRANCH}/example_11/description/ros2_control/avc_car.ros2_control.xacro>`__
 
-* RViz configuration: `avc_car.rviz <https://github.com/ros-controls/ros2_control_demos/tree/{REPOS_FILE_BRANCH}/ros2_control_demo_description/avc_car/rviz/avc_car.rviz>`__
+* RViz configuration: `avc_car.rviz <https://github.com/ros-controls/ros2_control_demos/tree/{REPOS_FILE_BRANCH}/avc_car_description/avc_car/rviz/avc_car.rviz>`__
 
 * Hardware interface plugin: `avc_car_system.cpp <https://github.com/ros-controls/ros2_control_demos/tree/{REPOS_FILE_BRANCH}/example_11/hardware/avc_car_system.cpp>`__
 

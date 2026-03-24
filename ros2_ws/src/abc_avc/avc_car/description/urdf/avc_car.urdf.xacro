@@ -3,13 +3,13 @@
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="avc_car_robot">
   <xacro:arg name="prefix" default="" />
 
-  <xacro:include filename="$(find avc_car_description)/avc_car/urdf/avc_car_description.urdf.xacro" />
+  <xacro:include filename="avc_car_description.urdf.xacro" />
 
   <!-- Import Rviz colors -->
-  <xacro:include filename="$(find avc_car_description)/avc_car/urdf/avc_car.materials.xacro" />
+  <xacro:include filename="avc_car.materials.xacro" />
 
   <!-- Import avc_car ros2_control description -->
-  <xacro:include filename="$(find avc_car)/ros2_control/avc_car.ros2_control.xacro" />
+  <xacro:include filename="../ros2_control/avc_car.ros2_control.xacro" />
 
   <xacro:avc_car prefix="$(arg prefix)" />
 
