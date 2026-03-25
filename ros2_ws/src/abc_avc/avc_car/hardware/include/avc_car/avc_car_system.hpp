@@ -92,8 +92,6 @@ public:
    */
   rclcpp::Clock::SharedPtr get_clock() const { return clock_; }
 
-
-
 private:
   // Parameters for the avc_car simulation
   double hw_start_sec_;
@@ -118,15 +116,9 @@ private:
   //   hw_interfaces_;  // name of joint, state, command
   std::map<std::string, Joint> hw_interfaces_;
 
-  int posx;
-  int posy;
-  int posz;
-  int orix;
-  int oriy;
-  int oriz;
 
+  std::string pose_sensor_;
 
-  std::vector<double> hw_sensor_states_;
 };
 
 }  // namespace avc_car

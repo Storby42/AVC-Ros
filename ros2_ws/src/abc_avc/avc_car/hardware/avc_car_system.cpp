@@ -153,7 +153,13 @@ hardware_interface::CallbackReturn avc_carSystemHardware::on_init(
   }
 
     //Get sensor state interfaces
-  hw_sensor_states_.resize(info_.sensors[0].state_interfaces.size(), std::numeric_limits<double>::quiet_NaN());
+  for (const hardware_interface::ComponentInfo & sensor : info_.sensors)
+  {
+    if (sensor.name.find("fused_odom") != std::string::npos)
+    {
+      pose_sensor_ = sensor.name;
+    }
+  }
 
 
 
@@ -196,12 +202,6 @@ std::vector<hardware_interface::StateInterface> avc_carSystemHardware::export_st
           joint.second.joint_name, hardware_interface::HW_IF_VELOCITY,
           &joint.second.state.velocity));
     }
-  }
-  for (uint i = 0; i < info_.sensors[0].state_interfaces.size(); i++)
-  {
-    state_interfaces.emplace_back(
-      hardware_interface::StateInterface(
-        info_.sensors[0].name, info_.sensors[0].state_interfaces[i].name, &hw_sensor_states_[i]));
   }
 
   RCLCPP_INFO(get_logger(), "Exported %zu state interfaces.", state_interfaces.size());
@@ -314,18 +314,6 @@ hardware_interface::return_type avc_carSystemHardware::read(
   const rclcpp::Time & /*time*/, const rclcpp::Duration & period)
 {
 
-  std::stringstream ss;
-  for (uint i = 0; i < hw_sensor_states_.size(); i++)
-  {
-    // Simulate RRBot's sensor data
-    unsigned int seed = time(NULL) + i;;
-    hw_sensor_states_[i] = i;
-
-    ss << std::fixed << std::setprecision(2) << std::endl
-       << "\t" << hw_sensor_states_[i] << " for sensor '"
-       << info_.sensors[0].state_interfaces[i].name.c_str() << "'";
-  }//This is stupid, don't do this
-
     // set_state(
   //   steering_joint_ + "/" + hardware_interface::HW_IF_POSITION,
   //   get_command(steering_joint_ + "/" + hardware_interface::HW_IF_POSITION));
@@ -378,17 +366,17 @@ hardware_interface::return_type avc_carSystemHardware::read(
   // funni reverse radius thing with traction_cal and wheel_radius
   // Publish odometry to sensor state interfaces (only touch sensors that exist).
   
-  //pose_sensor_[position.x].state = (static_cast<double>(odometry.x) / traction_cal);
-  // set_state(pose_sensor_ + "/position.y", static_cast<double>(odometry.y) / traction_cal);
-  // // If the Pico provides a z value, replace the 0.0 below with odometry.z
-  // set_state(pose_sensor_ + "/position.z", 0.0);
+  pose_sensor_ + "/position.x", static_cast<double>(odometry.x) / traction_cal);
+  set_state(pose_sensor_ + "/position.y", static_cast<double>(odometry.y) / traction_cal);
+  // If the Pico provides a z value, replace the 0.0 below with odometry.z
+  set_state(pose_sensor_ + "/position.z", 0.0);
 
-  // // Publish a default (identity) quaternion for orientation sensors unless you
-  // // have a yaw/quat from the Pico (then compute/use that instead).
-  // set_state(pose_sensor_ + "/orientation.x", 0.0);
-  // set_state(pose_sensor_ + "/orientation.y", 0.0);
-  // set_state(pose_sensor_ + "/orientation.z", static_cast<double>(sin(odometry.theta/2)));
-  // set_state(pose_sensor_ + "/orientation.w", static_cast<double>(cos(odometry.theta/2)));
+  // Publish a default (identity) quaternion for orientation sensors unless you
+  // have a yaw/quat from the Pico (then compute/use that instead).
+  set_state(pose_sensor_ + "/orientation.x", 0.0);
+  set_state(pose_sensor_ + "/orientation.y", 0.0);
+  set_state(pose_sensor_ + "/orientation.z", static_cast<double>(sin(odometry.theta/2)));
+  set_state(pose_sensor_ + "/orientation.w", static_cast<double>(cos(odometry.theta/2)));
   
   
   double section_ms = static_cast<double>(section_us) / 1000.0;
@@ -399,6 +387,8 @@ hardware_interface::return_type avc_carSystemHardware::read(
     section_ms, (long long)section_us);
   //PORT ME!!!!
 
+
+  std::stringstream ss;
   ss << "Reading states:";
 
   ss << std::fixed << std::setprecision(2) << std::endl

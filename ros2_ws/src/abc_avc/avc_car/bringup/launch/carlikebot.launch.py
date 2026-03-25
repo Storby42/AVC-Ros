@@ -65,7 +65,7 @@ def generate_launch_description():
     )
     rviz_config_file = PathJoinSubstitution(
         [
-            FindPackageShare("avc_car_description"),
+            FindPackageShare("ros2_control_demo_description"),
             "avc_car/rviz",
             "avc_car.rviz",
         ]
