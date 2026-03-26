@@ -302,7 +302,7 @@ hardware_interface::return_type avc_carSystemHardware::read(
   // funni reverse radius thing with traction_cal and wheel_radius
   // Publish odometry to sensor state interfaces (only touch sensors that exist).
   set_state(pose_sensor_ + "/position.x", wheel_radius * static_cast<double>(odometry.x) / traction_cal);
-  set_state(pose_sensor_ + "/position.y", wheel_radius * static_cast<double>(odometry.y) / traction_cal);
+  set_state(pose_sensor_ + "/position.y", wheel_radius * static_cast<double>(odometry.y) / -traction_cal);
   // If the Pico provides a z value, replace the 0.0 below with odometry.z
   set_state(pose_sensor_ + "/position.z", 0.0);
 
