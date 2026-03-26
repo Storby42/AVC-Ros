@@ -47,6 +47,9 @@ def main():
   # local_costmap = navigator.getLocalCostmap()
  
   # Set the robot's goal poses
+
+  goals_list = [] #insta
+
   goal_poses = []
    
   goal_pose = PoseStamped()

@@ -69,7 +69,7 @@ controller_server:
   ros__parameters:
     controller_frequency: 20.0 # how frequently controller sends commands (Hz) to /cmd_vel
     min_x_velocity_threshold: 0.001 # prevents noise (ignores too small of velocities, sets to 0 instead)
-    min_y_velocity_threshold: 0.001 # prevents noise (ignores too small of velocities sets to 0 instead)
+    min_y_velocity_threshold: 0.001 # prevents noisse (ignores too small of velocities sets to 0 instead)
     min_theta_velocity_threshold: 0.001 # prevents noise (ignores too small of velocities sets to 0 instead)
     progress_check_plugin: ["progress_checker"]
     goal_checker_plugins: ["goal_checker"]
@@ -83,16 +83,16 @@ controller_server:
       # minimum amount of movement the robot must undergo in a certain time to be counted as progressing
     goal_checker:
       plugin: "nav2_controller::SimpleGoalChecker"
-      xy_goal_tolerance: 0.15 # meters
-      yaw_goal_tolerance: 0.05 # radians
-      path_length_tolerance: 0.5 # meters
+      xy_goal_tolerance: 0.35 # meters
+      yaw_goal_tolerance: 0.75 # radians
+      path_length_tolerance: 0.4 # meters
       stateful: True # 
     FollowPath:
        # CHANGED from regulated pure persuit controller -> to vector persuit controller
         plugin: "vector_pursuit_controller::VectorPursuitController"
-        k: 5.0 # rotation_time = k * translation_time, relates how much you fast you can turn to the translational (forward) movement
+        k: 7.0 # rotation_time = k * translation_time, relates how much you fast you can turn to the translational (forward) movement
         desired_linear_vel: 0.5 # target linear velocity
-        min_turning_radius: 0.25 # should be less than planner min turning radius (so you don't get stuck in a loop)
+        min_turning_radius: 0.198 # should be less than planner min turning radius (so you don't get stuck in a loop)
         
         use_rotate_to_heading: false # if the current heading =/= path heading, turn to the path heading 
                                      # by moving in place (i.e. NOT moving forward/using a curved arc)
@@ -214,7 +214,7 @@ planner_server:
       plugin: "nav2_smac_planner::SmacPlannerHybrid" 
       downsample_costmap: false  # DOESN'T downsample entire map -> more accurate (uses full resolution) but more processing power     
       downsampling_factor: 1     # if we want to downsample, the factor to divide resolution        
-      tolerance: 0.25 # tolerance from requested goalpoint (e.g. if exact path can't be found)
+      tolerance: 0.35 # tolerance from requested goalpoint (e.g. if exact path can't be found)
       allow_unknown: true # allows planner to plan in places marked "unknown"
       max_iterations: 1000000             # max number of search iterations
       max_on_approach_iterations: 1000    # number of iterations where: once robot within tolerance, try to align exactly at goal
@@ -226,7 +226,7 @@ planner_server:
                                           # should always be >4-5 times max turning radius or else huge planning times
       analytic_expansion_max_cost: 200.0  # doesn't allow shortcut into high cost
       analytic_expansion_max_cost_override: false # ^ is strictly enforced (if true, can override)
-      minimum_turning_radius: 0.3  
+      minimum_turning_radius: 0.21 # a bit larger than actual min turning error
       reverse_penalty: 2.0                
       change_penalty: 0.0                 
       non_straight_penalty: 1.0         
