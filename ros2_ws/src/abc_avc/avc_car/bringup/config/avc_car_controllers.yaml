@@ -33,7 +33,7 @@ pose_broadcaster:
   ros__parameters:
     type: pose_broadcaster/PoseBroadcaster
     pose_name: fused_odom
-    frame_id: base_link
+    frame_id: odom
     tf.enable: true
-    tf.child_frame_id: odom2
+    tf.child_frame_id: base_link
 

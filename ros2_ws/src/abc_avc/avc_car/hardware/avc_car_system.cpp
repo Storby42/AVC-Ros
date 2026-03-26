@@ -301,8 +301,8 @@ hardware_interface::return_type avc_carSystemHardware::read(
   // TODO: do quat bullshit here
   // funni reverse radius thing with traction_cal and wheel_radius
   // Publish odometry to sensor state interfaces (only touch sensors that exist).
-  set_state(pose_sensor_ + "/position.x", static_cast<double>(odometry.x) / traction_cal);
-  set_state(pose_sensor_ + "/position.y", static_cast<double>(odometry.y) / traction_cal);
+  set_state(pose_sensor_ + "/position.x", wheel_radius * static_cast<double>(odometry.x) / traction_cal);
+  set_state(pose_sensor_ + "/position.y", wheel_radius * static_cast<double>(odometry.y) / traction_cal);
   // If the Pico provides a z value, replace the 0.0 below with odometry.z
   set_state(pose_sensor_ + "/position.z", 0.0);
 
@@ -310,8 +310,8 @@ hardware_interface::return_type avc_carSystemHardware::read(
   // have a yaw/quat from the Pico (then compute/use that instead).
   set_state(pose_sensor_ + "/orientation.x", 0.0);
   set_state(pose_sensor_ + "/orientation.y", 0.0);
-  set_state(pose_sensor_ + "/orientation.z", static_cast<double>(sin(odometry.theta/2)));
-  set_state(pose_sensor_ + "/orientation.w", static_cast<double>(cos(odometry.theta/2)));
+  set_state(pose_sensor_ + "/orientation.z", static_cast<double>(sin(odometry.theta/-2)));
+  set_state(pose_sensor_ + "/orientation.w", static_cast<double>(cos(odometry.theta/-2)));
   
   
   double section_ms = static_cast<double>(section_us) / 1000.0;
