@@ -6,6 +6,6 @@ twist_mux:
         timeout: 0.5
         priority: 10
       keyboard:
-        topic: cmd_vel_keyboard # TODO: whatever we're using for manual control, see https://articulatedrobotics.xyz/tutorials/mobile-robot/applications/teleop for guide
+        topic: cmd_vel_manual # TODO: whatever we're using for manual control, see https://articulatedrobotics.xyz/tutorials/mobile-robot/applications/teleop for guide
         timeout: 0.5
         priority: 100 # means that IF the manual control is used, it always overrides nav2

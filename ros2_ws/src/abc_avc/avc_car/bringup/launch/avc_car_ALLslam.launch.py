@@ -1,7 +1,6 @@
 import os
 
 from ament_index_python.packages import get_package_share_directory
-
 from launch import LaunchDescription
 from launch.actions import (EmitEvent, LogInfo,
                             RegisterEventHandler, DeclareLaunchArgument, GroupAction, SetEnvironmentVariable)
@@ -19,19 +18,23 @@ from launch_ros.actions import LifecycleNode
 from launch.events import matches_action
 from launch_ros.event_handlers import OnStateTransition
 from launch_ros.events.lifecycle import ChangeState
+from launch.substitutions import Command, FindExecutable, PathJoinSubstitution
+from launch_ros.substitutions import FindPackageShare
+
 
 def generate_launch_description():
     package_name='avc_car'
-    declared_arguments = []
+
+    # finicky so just alunching separately so it can get reset seperately too
+    # roscontrolrviz = IncludeLaunchDescription(
+    #     PythonLaunchDescriptionSource([os.path.join(
+    #         get_package_share_directory(package_name),'launch','avc_car.testlaunch.py'
+    #     )]), 
+    # )
+
     navigation = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([os.path.join(
             get_package_share_directory(package_name),'launch','avc_navigation.launch.py'
-        )]), 
-    )
-
-    roscontrolrviz = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([os.path.join(
-            get_package_share_directory(package_name),'launch','avc_car.testlaunch.py'
         )]), 
     )
 
@@ -59,8 +62,7 @@ def generate_launch_description():
         description='Use simulation/Gazebo clock')
     declare_slam_params_file_cmd = DeclareLaunchArgument(
         'slam_params_file',
-        default_value=os.path.join(get_package_share_directory("slam_toolbox"),
-                                   'config', 'mapper_params_online_sync.yaml'),
+        default_value=os.path.join(get_package_share_directory(package_name), 'config', 'mappertest.yaml'),
         description='Full path to the ROS2 parameters file to use for the slam_toolbox node')
 
     # Perform substitution `$find-pkg-share`
@@ -69,16 +71,18 @@ def generate_launch_description():
         allow_substs=True,
     )
     
-    start_sync_slam_toolbox_node = LifecycleNode(
+    start_async_slam_toolbox_node = LifecycleNode(
         parameters=[
           slam_params_file_w_subst,
           {
             'use_lifecycle_manager': use_lifecycle_manager,
-            'use_sim_time': use_sim_time
+            'use_sim_time': use_sim_time,
+            'slam_params_file': os.path.join(
+            get_package_share_directory(package_name),'config','mappertest.yaml')
           }
         ],
         package='slam_toolbox',
-        executable='sync_slam_toolbox_node',
+        executable='async_slam_toolbox_node',
         name='slam_toolbox',
         output='screen',
         namespace=''
@@ -86,7 +90,7 @@ def generate_launch_description():
 
     configure_event = EmitEvent(
         event=ChangeState(
-            lifecycle_node_matcher=matches_action(start_sync_slam_toolbox_node),
+            lifecycle_node_matcher=matches_action(start_async_slam_toolbox_node),
             transition_id=Transition.TRANSITION_CONFIGURE
         ),
         condition=IfCondition(AndSubstitution(autostart, NotSubstitution(use_lifecycle_manager)))
@@ -94,13 +98,13 @@ def generate_launch_description():
 
     activate_event = RegisterEventHandler(
         OnStateTransition(
-            target_lifecycle_node=start_sync_slam_toolbox_node,
+            target_lifecycle_node=start_async_slam_toolbox_node,
             start_state="configuring",
             goal_state="inactive",
             entities=[
                 LogInfo(msg="[LifecycleLaunch] Slamtoolbox node is activating."),
                 EmitEvent(event=ChangeState(
-                    lifecycle_node_matcher=matches_action(start_sync_slam_toolbox_node),
+                    lifecycle_node_matcher=matches_action(start_async_slam_toolbox_node),
                     transition_id=Transition.TRANSITION_ACTIVATE
                 ))
             ]
@@ -109,21 +113,47 @@ def generate_launch_description():
     )
     
     twist_stamper = Node(
-            package='twist_stamper',
-            executable='twist_stamper',
-            remappings=[
-                ('/cmd_vel_in', '/cmd_vel'),
-                ('/cmd_vel_out', '/cmd_vel_stamped')
+        package='twist_stamper',
+        executable='twist_stamper',
+        remappings=[
+            ('/cmd_vel_in', '/cmd_vel'),
+            ('/cmd_vel_out', '/bicycle_steering_controller/reference')
             ],
-            parameters=[{'frame_id': 'base_link'}]
+        parameters=[{'frame_id': 'base_link'}]
         )
 
-    declared_arguments = [
-        navigation, roscontrolrviz, lidar,
-        declare_autostart_cmd, declare_use_lifecycle_manager, declare_use_sim_time_argument, declare_slam_params_file_cmd, start_sync_slam_toolbox_node, configure_event, activate_event
-        ]
+    start_nav_after_slam_activates = RegisterEventHandler(
+        OnStateTransition(
+            target_lifecycle_node=start_async_slam_toolbox_node,
+            goal_state='active',
+            entities=[
+                LogInfo(msg="async_slam_toolbox_node is active: starting nav2 stack"),
+                navigation
+            ]
+        ),
+    )
+    # twist_mux_params = PathJoinSubstitution(
+    #     [
+    #         FindPackageShare("avc_car"),
+    #         "config",
+    #         "twist_mux.yaml",
+    #     ]
+    # )
+    # twist_mux = Node(
+    #     package='twist_mux',
+    #     executable='twist_mux',
+    #     parameters=[twist_mux_params],
+    #     remappings=[('/cmd_vel_out', '/bicycle_steering_controller/reference')], 
+    #     # the velocity comands are sent to the bicycle controller, which then send commands to the hardware interface
+    # )
 
-    nodes = [
-        twist_stamper, start_sync_slam_toolbox_node
-        ]
-    return LaunchDescription(declared_arguments + nodes)
+    declared_arguments = [
+        lidar,
+        twist_stamper,
+        # twist_mux,
+        declare_autostart_cmd, declare_use_lifecycle_manager, declare_use_sim_time_argument, declare_slam_params_file_cmd, start_async_slam_toolbox_node, configure_event, activate_event
+        #, navigation, start_nav_after_slam_activates
+    ] # just do nav by itself. It creates too many controller servers otherwise. ts pmo. - Annabeth
+        #navigation,
+
+    return LaunchDescription(declared_arguments)
