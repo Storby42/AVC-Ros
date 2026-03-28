@@ -1,8 +1,9 @@
 twist_mux:
   ros__parameters:
+    use_stamped: true
     topics:
       navigation:
-        topic: cmd_vel_nav # the input from nav2
+        topic: cmd_vel_nav_stamped # the input from nav2, after being stamped
         timeout: 0.5
         priority: 10
       keyboard:

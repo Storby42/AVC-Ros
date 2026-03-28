@@ -2,16 +2,16 @@
 PURPOSE: use bucket relative coords and color + current estimated pose
 INPUT:
     from vision: bucket rel coords, bucket color, image timestamp, bucket confidence
-    from fused (kalman thing) odom: history ~40ms? ALREADY IN KF NODE BY DEFAULT!
+    from fused (kalman thing) odom: history ~40ms?
 
 to get a more accurate position and publish it (vision corrected pose)
 '''
 
 import rclpy
 from rclpy.node import Node
-from geometry_msgs.msg import Vector3
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from nav_msgs.msg import Odometry
+from vision_msgs.msg import Detection3DArray
 import numpy as np
 import math
 from tf_transformations import euler_from_quaternion
@@ -27,15 +27,15 @@ class BuckalizationNode(Node):
 
         # Set up subscriber and publisher nodes
         # subscribe to technoblad-- i mean vision get bucket pos, and fused odom for position and heading
-        self.subscription_vision = self.create_subscription(Vector3, '/vision_measurements', self.vision_callback, 10) # PLACEHOLDER TOPIC NAME AND DATATYPE
-        self.subscription_fused_odom = self.create_subscription(Odometry, '/odometry/global', self.fusedOdom_callback, 10) # PLACEHOLDER TOPIC NAME
+        self.subscription_vision = self.create_subscription(Detection3DArray, '/vision_measurements', self.vision_callback, 10) # PLACEHOLDER TOPIC NAME
+        self.subscription_fused_odom = self.create_subscription(Odometry, '/odometry/global', self.fusedOdom_callback, 10)
 
         self.publisher_buckalization = self.create_publisher(PoseWithCovarianceStamped, '/buckalization', 10)
 
-        self.prev_time = self.get_clock().now().nanoseconds / 10**9 # initialize time checkpoint
+        # self.prev_time = self.get_clock().now().nanoseconds / 10**9 # initialize time checkpoint
 
         # tunable values
-        self.MINIMUM_BUCKET_CONFIDENCE = .8 # percent val between 0-1
+        # self.MINIMUM_BUCKET_CONFIDENCE = .8 # percent val between 0-1
 
         self.known_buckets = []
 
@@ -58,49 +58,52 @@ class BuckalizationNode(Node):
         self.visionYaw = 0.0
 
     class Bucket():
-        relx = 0.0
-        rely = 0.0
-        worldx = 0.0
-        worldy = 0.0
-        color = ""
-        confidence = 0.0
-        id = None
-        def __init__(self, x:float, y:float, color:str, confidence:float = None):
-            self.x = x
-            self.y = y
-            self.color = color
-            if confidence is not None:
-                self.confidence = confidence
-        def id_bucket(self, fusedOdom, known_buckets): # relative coords + color of bucket you are finding the "real" version of
-            # abs cords of bucket by measurement
-            #tx, ty = relX + fusedOdom[0]*np.cos(fusedOdom[2]), relY + fusedOdom[1]*np.sin(fusedOdom[2])
-            self.worldx = fusedOdom[0] + np.cos(fusedOdom[2])*self.rely + np.sin(fusedOdom[2])*self.relx
-            self.worldy = fusedOdom[1] + np.sin(fusedOdom[2])*self.rely - np.cos(fusedOdom[2])*self.relx
-            print("bucket pos:", self.worldx, self.worldy)
-            # split relx and rely into true x and true y
+        # 0 = red, 1 = yellow, 2 = blue
+        def __init__(self, color: int, relx: float = None, rely: float = None, worldx: float = None, worldy: float = None, confidence: float = None):
+            self.color = color # color is a lowercase "yellow", "blue", etc
+            self.confidence = confidence # (sent by vision network)
+            # relx is forward, rely is left.
+            self.relx = relx
+            self.rely = rely
+            # worldx is right, worldy is up
+            self.worldx = worldx
+            self.worldy = worldy
+            self.id = None
 
-            # compare it to every
-            id = 0 # id of the closest bucket
-            for i in range(len(known_buckets)):
-                if known_buckets[i].color == self.color: # use pseudo distance formula to find closest real counterpart
-                    #print(f"squared dist from bucket {i}: {((known_buckets[i].worldx - self.worldx)**2 + (known_buckets[i].worldy - self.worldy)**2)}")
-                    if ((known_buckets[i].worldx - self.worldx)**2 + (known_buckets[i].worldy - self.worldy)**2) < (known_buckets[id].worldx - self.worldx)**2 + (known_buckets[id].worldy - self.worldy)**2:
-                        id = i
+        def id_bucket(self, fusedOdom, known_buckets:list): # relative coords + color of bucket you are finding the "real" version of
+            # split relx and rely into world x and world y
+            # FIXED FOR ACTUAL ROS REL COORD SYS
+            self.worldx = fusedOdom[0] + math.cos(fusedOdom[2])*self.relx - math.sin(fusedOdom[2])*self.rely
+            self.worldy = fusedOdom[1] + math.sin(fusedOdom[2])*self.relx + math.cos(fusedOdom[2])*self.rely
+            #print("bucket pos:", self.worldx, self.worldy)
+
+            best_id = 0 # id of the closest bucket of the same color
+            best_dist = float('inf')
+
+            for i, bucket in enumerate(known_buckets):
+                if bucket.color == self.color:
+                    continue
+                # use pseudo distance to find closest real counterpart
+                dist = (bucket.worldx - self.worldx) ** 2 + (bucket.worldy - self.worldy) ** 2
+                if dist < best_dist:
+                    best_dist = dist
+                    best_id = i
+
             # return id as index for real bucket
-            self.id = id
-            return id
+            self.id = best_id
+            return best_id
 
         # if (bucket confidence > self.MINIMUM_BUCKET_CONFIDENCE):
             # if (buckets seen > 2):
 
     def publish_poseWcovar(self):
         msg = PoseWithCovarianceStamped()
-        # heading (timestamp)
+        # heading (timestamp is most important bit)
         msg.header.stamp = self.get_clock().now().to_msg()
         # point
         msg.pose.pose.position.x = self.visionX
         msg.pose.pose.position.y = self.visionY
-        msg.pose.pose.position.z = z
+        msg.pose.pose.position.z = 0
         # quaternion (orientation)
         x, y, z, w, = quaternion_from_euler(0, 0, self.visionYaw)
         msg.pose.pose.orientation.x = x
@@ -111,23 +114,36 @@ class BuckalizationNode(Node):
         # (x, y, z, rotation about X axis, rotation about Y axis, rotation about Z axis)
         # FIND THE VARIANCES OF X Y YAW. Assumed 0 for z, pitch, roll, and covariances
         msg.pose.covariance = [
-            .1, 0, 0, 0, 0, 0,
-            0, .1, 0, 0, 0, 0,
+            .05, 0, 0, 0, 0, 0,
+            0, .05, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 1
             ]
-        self.publisher_.publish(msg)
-        
-        # ASSUMED BUCKET STRUCTURE: a list called "buckets" with params of:
-        # relX (float), relY (float), color (uppercase str), time (idk), confidence (float 0-1)
+        self.publisher_buckalization.publish(msg)
+    
+    # Buckets are in this format: https://docs.ros.org/en/lunar/api/vision_msgs/html/msg/Detection3DArray.html
+    # relX (float), relY (float), color (uppercase str), time (idk), confidence (float 0-1)
     def vision_callback(self, data): # there will be some rel x rel y color confidence
-        if len(data.buckets) == 0:
+        if len(data.detections) == 0:
             return
+
+        # change the shit given by the vision node into nice Bucket objects
+        buckified = []
+        for detection in data.detections:
+            hi_con = 0.0
+            hi_con_bucket = None
+            for result in detection.result:
+                if result.score > hi_con:
+                    hi_con = result.score
+                    hi_con_bucket = result
+            buckified.append(self.Bucket(color = hi_con_bucket.id, relx = hi_con_bucket.pose.pose.position.x,
+                rely = hi_con_bucket.pose.pose.position.y,
+                confidence = hi_con
+            ))
         
-        # choose the bucket of highest confidence and find its real identity
-        buckified = data # TODO: Make this actually translate whataver the data is in to a list of bucket objects
+         # choose the bucket of highest confidence and find its real identity
         buckets_by_con = sorted(buckified, key=lambda bucket: -bucket.confidence)
         for bucket in buckets_by_con:
             bucket.id_bucket(fusedOdom = self.fusedOdom, known_buckets=self.known_buckets)
@@ -135,12 +151,12 @@ class BuckalizationNode(Node):
         # 1. find translation to get bucket of highest confidence (BOHC) to
         # most plausible corresponding actual (based on known map) bucket position
         # transform car pos estimation based on this too
-        # new car pos estimation is the fused odom plus the difference between where the bucket was measured and
-        self.visionX = self.fusedOdom[0] - (buckets_by_con[0].relx - self.known_buckets[buckets_by_con[0].id].x)
-        self.visionY = self.fusedOdom[1] - (buckets_by_con[0].rely - self.known_buckets[buckets_by_con[0].id].y)
+        # new car pos estimation is the fused odom plus the difference between where the bucket was measured and where it actually is
+        self.visionX = self.fusedOdom[0] - (buckets_by_con[0].worldx - self.known_buckets[buckets_by_con[0].id].worldx)
+        self.visionY = self.fusedOdom[1] - (buckets_by_con[0].worldy - self.known_buckets[buckets_by_con[0].id].worldy)
         
         # 2. find rotation (around BOHC) to get the 2nd bucket into the angle that makes sense (again based on known map)
-        if len(data.buckets) >= 2: # RENAME ONCE MESSAGE IS BETTER KNOWN
+        if len(data.detections) >= 2: # RENAME ONCE MESSAGE IS BETTER KNOWN
             known_bucket_1 = self.known_buckets[buckets_by_con[0].id]
             known_bucket_2 = self.known_buckets[buckets_by_con[1].id]
             # theta 1 is what the angle should be, theta 2 is what it is measured to be (global)
