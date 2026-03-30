@@ -12,7 +12,6 @@ from rclpy.node import Node
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from nav_msgs.msg import Odometry
 from vision_msgs.msg import Detection3DArray
-import numpy as np
 import math
 from tf_transformations import euler_from_quaternion
 from tf_transformations import quaternion_from_euler
@@ -35,13 +34,13 @@ class BuckalizationNode(Node):
         # self.prev_time = self.get_clock().now().nanoseconds / 10**9 # initialize time checkpoint
 
         # tunable values
-        # self.MINIMUM_BUCKET_CONFIDENCE = .8 # percent val between 0-1
+        self.MINIMUM_BUCKET_CONFIDENCE = .5 # percent val between 0-1
 
         self.known_buckets = []
 
         buckalization_dir = get_package_share_directory('buckalization') 
         parameters_file_dir = os.path.join(buckalization_dir, 'data') 
-        parameters_file_path = os.path.join(parameters_file_dir, 'buckets.csv')
+        parameters_file_path = os.path.join(parameters_file_dir, 'buckets_testing.csv')
         
         with open(parameters_file_path, newline='\n') as csvfile:
             bucketreader = csv.reader(csvfile, delimiter=',', quotechar='|')
@@ -68,7 +67,7 @@ class BuckalizationNode(Node):
             # worldx is right, worldy is up
             self.worldx = worldx
             self.worldy = worldy
-            self.id = None
+            self.id = None # index of the corresponding real bucket
 
         def id_bucket(self, fusedOdom, known_buckets:list): # relative coords + color of bucket you are finding the "real" version of
             # split relx and rely into world x and world y
@@ -89,12 +88,20 @@ class BuckalizationNode(Node):
                     best_dist = dist
                     best_id = i
 
-            # return id as index for real bucket
+            # return id (index for real bucket)
             self.id = best_id
             return best_id
 
         # if (bucket confidence > self.MINIMUM_BUCKET_CONFIDENCE):
             # if (buckets seen > 2):
+
+    def handle_ided_red(red1:Bucket, red2:Bucket):
+        if red1.worldy > red2.worldy:
+            red1.id = 7
+            red2.id = 6
+        else:
+            red1.id = 6
+            red2.id = 7
 
     def publish_poseWcovar(self):
         msg = PoseWithCovarianceStamped()
@@ -129,7 +136,7 @@ class BuckalizationNode(Node):
         if len(data.detections) == 0:
             return
 
-        # change the shit given by the vision node into nice Bucket objects
+        # change the msg given by the vision node into nice Bucket objects
         buckified = []
         for detection in data.detections:
             hi_con = 0.0
@@ -138,16 +145,29 @@ class BuckalizationNode(Node):
                 if result.score > hi_con:
                     hi_con = result.score
                     hi_con_bucket = result
-            buckified.append(self.Bucket(color = hi_con_bucket.id, relx = hi_con_bucket.pose.pose.position.x,
-                rely = hi_con_bucket.pose.pose.position.y,
-                confidence = hi_con
-            ))
+            if hi_con > self.MINIMUM_BUCKET_CONFIDENCE: # also do filtering for confidence levels here
+                buckified.append(self.Bucket(
+                    color = hi_con_bucket.id,
+                    relx = hi_con_bucket.pose.pose.position.x,
+                    rely = hi_con_bucket.pose.pose.position.y,
+                    confidence = hi_con
+                ))
         
-         # choose the bucket of highest confidence and find its real identity
+        # choose the bucket of highest confidence (and start keeping track of red buckets)
+        redbucks = []
         buckets_by_con = sorted(buckified, key=lambda bucket: -bucket.confidence)
+        del buckets_by_con[3:]
+        # ID all buckets
         for bucket in buckets_by_con:
             bucket.id_bucket(fusedOdom = self.fusedOdom, known_buckets=self.known_buckets)
+            if bucket.color == 0:
+                redbucks.append(bucket)
 
+        if len(redbucks) == 1:
+            return
+        elif len(redbucks) >= 2:
+            self.handle_ided_red(redbucks[0], redbucks[1])
+        
         # 1. find translation to get bucket of highest confidence (BOHC) to
         # most plausible corresponding actual (based on known map) bucket position
         # transform car pos estimation based on this too
@@ -159,26 +179,29 @@ class BuckalizationNode(Node):
         if len(data.detections) >= 2: # RENAME ONCE MESSAGE IS BETTER KNOWN
             known_bucket_1 = self.known_buckets[buckets_by_con[0].id]
             known_bucket_2 = self.known_buckets[buckets_by_con[1].id]
+
             # theta 1 is what the angle should be, theta 2 is what it is measured to be (global)
             theta1 = math.atan2(known_bucket_2.worldy - known_bucket_1.worldy, known_bucket_2.worldx - known_bucket_1.worldx)
             theta2 = math.atan2(buckets_by_con[1].worldy - buckets_by_con[0].worldy, buckets_by_con[1].worldx - buckets_by_con[0].worldx)
             ccw_rot = theta1 - theta2
 
-            self.visionYaw += ccw_rot
+            self.visionYaw = self.fusedOdom + ccw_rot
+
             # 3. METHOD 1: rotate the car's known position around that same place
             # rotation point = (xr, yr)
             # new x = (x-xr)*cos(theta) - (y-yr)*sin(theta) + xr
             # new y = (x-xr)*sin(theta) + (y-yr)*cos(theta) + yr
-            self.visionX, self.visionY = (self.visionX-known_bucket_2.worldx)*math.cos(ccw_rot) - (self.visionY-known_bucket_2.worldy)*math.sin(ccw_rot) + known_bucket_2.worldx, (self.visionY-known_bucket_2.worldy)*math.cos(ccw_rot) + (self.visionX-known_bucket_2.worldx)*math.sin(ccw_rot) + known_bucket_2.worldy
+            visionX, visionY = ((visionX-known_bucket_1.worldx)*math.cos(ccw_rot) - (visionY-known_bucket_1.worldy)*math.sin(ccw_rot) + known_bucket_1.worldx,
+                                (visionY-known_bucket_1.worldy)*math.cos(ccw_rot) + (visionX-known_bucket_1.worldx)*math.sin(ccw_rot) + known_bucket_1.worldy)
             
             # 3b. METHOD 2: do circle intersections. Closest one is prolly right
-            x1, y1, x2, y2 = self.get_intersections(known_bucket_1.worldx, known_bucket_1.worldy, math.sqrt(buckets_by_con[0].relx**2 + buckets_by_con[0].rely**2), known_bucket_2.worldx, known_bucket_2.worldy, math.sqrt(buckets_by_con[1].relx**2 + buckets_by_con[1].rely**2))
-            if (x1-self.fusedOdom[0])**2 + (y1-self.fusedOdom[1])**2 < (x2-self.fusedOdom[0])**2 + (y2-self.fusedOdom[1])**2:
-                self.visionX = x1
-                self.visionY = y1
-            else:
-                self.visionX = x2
-                self.visionY = y2
+            # x1, y1, x2, y2 = self.get_intersections(known_bucket_1.worldx, known_bucket_1.worldy, math.sqrt(buckets_by_con[0].relx**2 + buckets_by_con[0].rely**2), known_bucket_2.worldx, known_bucket_2.worldy, math.sqrt(buckets_by_con[1].relx**2 + buckets_by_con[1].rely**2))
+            # if (x1-self.fusedOdom[0])**2 + (y1-self.fusedOdom[1])**2 < (x2-self.fusedOdom[0])**2 + (y2-self.fusedOdom[1])**2:
+            #     self.visionX = x1
+            #     self.visionY = y1
+            # else:
+            #     self.visionX = x2
+            #     self.visionY = y2
         
         # publish new vision-based pose!
         self.publish_poseWcovar()
