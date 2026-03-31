@@ -40,13 +40,15 @@ def generate_launch_description():
     use_respawn = LaunchConfiguration('use_respawn')
     log_level = LaunchConfiguration('log_level')
 
-    lifecycle_nodes = ['controller_server',
+    lifecycle_nodes = ['map_server',
+                       'controller_server',
                        'smoother_server',
                        'planner_server',
                        'behavior_server',
                        'bt_navigator',
                        'waypoint_follower',
                        'velocity_smoother']
+    map_path = os.path.join(bringup_dir, 'bringup','maps', 'map.yaml')
 
     # Map fully qualified names to relative ones so the node's namespace can be prepended.
     # In case of the transforms (tf), currently, there doesn't seem to be a better alternative
@@ -111,6 +113,12 @@ def generate_launch_description():
     load_nodes = GroupAction(
         condition=IfCondition(PythonExpression(['not ', use_composition])),
         actions=[
+            Node(
+                package='nav2_map_server',
+                executable='map_server',
+                output='screen',
+                parameters=[{'yaml_filename': map_path}],# not sure if this is right
+            ),
             Node(
                 package='nav2_controller',
                 executable='controller_server',

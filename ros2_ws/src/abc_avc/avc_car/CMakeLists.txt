@@ -59,7 +59,7 @@ install(
   DESTINATION share/avc_car
 )
 install(
-  DIRECTORY bringup/launch bringup/config
+  DIRECTORY bringup/launch bringup/config bringup/maps
   DESTINATION share/avc_car
 )
 install(TARGETS avc_car
