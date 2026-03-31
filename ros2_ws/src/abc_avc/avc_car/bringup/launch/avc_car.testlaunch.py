@@ -147,7 +147,37 @@ def generate_launch_description():
         )
     )
 
+    twist_stamper = Node(
+        package='twist_stamper',
+        executable='twist_stamper',
+        remappings=[
+            ('/cmd_vel_in', '/cmd_vel'),
+            #('/cmd_vel_out', '/bicycle_steering_controller/reference'),
+            #('/cmd_vel_out', '/cmd_vel_nav'),
+            #('/cmd_vel_nav', '/cmd_vel_nav_stamped')
+            ('/cmd_vel_out', '/cmd_vel_nav_stamped')
+            ],
+        parameters=[{'frame_id': 'base_link'}]
+        )
+    
+    twist_mux_params = PathJoinSubstitution(
+        [
+            FindPackageShare("avc_car"),
+            "config",
+            "twist_mux.yaml",
+        ]
+    )
+    twist_mux = Node(
+        package='twist_mux',
+        executable='twist_mux',
+        parameters=[twist_mux_params],
+        remappings=[('/cmd_vel_out', '/bicycle_steering_controller/reference')], 
+        # the velocity comands are sent to the bicycle controller, which then send commands to the hardware interface
+    )
+
     nodes = [
+        twist_stamper,
+        twist_mux,
         control_node,
         robot_state_pub_bicycle_node,
         joint_state_broadcaster_spawner,

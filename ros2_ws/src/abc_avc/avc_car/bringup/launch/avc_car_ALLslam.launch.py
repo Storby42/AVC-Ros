@@ -32,11 +32,22 @@ def generate_launch_description():
     #     )]), 
     # )
 
-    navigation = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([os.path.join(
-            get_package_share_directory(package_name),'launch','avc_navigation.launch.py'
-        )]), 
-    )
+    # navigation = IncludeLaunchDescription(
+    #     PythonLaunchDescriptionSource([os.path.join(
+    #         get_package_share_directory(package_name),'launch','avc_navigation.launch.py'
+    #     )]), 
+    # )
+    # start_nav_after_slam_activates = RegisterEventHandler(
+    #     OnStateTransition(
+    #         target_lifecycle_node=start_async_slam_toolbox_node,
+    #         goal_state='active',
+    #         entities=[
+    #             LogInfo(msg="async_slam_toolbox_node is active: starting nav2 stack"),
+    #             navigation
+    #         ]
+    #     ),
+    # )
+
 
     lidar = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([os.path.join(
@@ -111,46 +122,9 @@ def generate_launch_description():
         ),
         condition=IfCondition(AndSubstitution(autostart, NotSubstitution(use_lifecycle_manager)))
     )
-    
-    twist_stamper = Node(
-        package='twist_stamper',
-        executable='twist_stamper',
-        remappings=[
-            ('/cmd_vel_in', '/cmd_vel'),
-            ('/cmd_vel_out', '/bicycle_steering_controller/reference')
-            ],
-        parameters=[{'frame_id': 'base_link'}]
-        )
-
-    start_nav_after_slam_activates = RegisterEventHandler(
-        OnStateTransition(
-            target_lifecycle_node=start_async_slam_toolbox_node,
-            goal_state='active',
-            entities=[
-                LogInfo(msg="async_slam_toolbox_node is active: starting nav2 stack"),
-                navigation
-            ]
-        ),
-    )
-    # twist_mux_params = PathJoinSubstitution(
-    #     [
-    #         FindPackageShare("avc_car"),
-    #         "config",
-    #         "twist_mux.yaml",
-    #     ]
-    # )
-    # twist_mux = Node(
-    #     package='twist_mux',
-    #     executable='twist_mux',
-    #     parameters=[twist_mux_params],
-    #     remappings=[('/cmd_vel_out', '/bicycle_steering_controller/reference')], 
-    #     # the velocity comands are sent to the bicycle controller, which then send commands to the hardware interface
-    # )
 
     declared_arguments = [
         lidar,
-        twist_stamper,
-        # twist_mux,
         declare_autostart_cmd, declare_use_lifecycle_manager, declare_use_sim_time_argument, declare_slam_params_file_cmd, start_async_slam_toolbox_node, configure_event, activate_event
         #, navigation, start_nav_after_slam_activates
     ] # just do nav by itself. It creates too many controller servers otherwise. ts pmo. - Annabeth
