@@ -21,6 +21,13 @@ https://github.com/ros-simulation/gazebo_ros_demos/blob/kinetic-devel/rrbot_desc
     <color rgba="0.2 0.2 0.2 1.0"/>
   </material>
 
+  <material name="miku">
+    <color rgba="0.055 0.918 0.914 1.0"/>
+  </material>
+  <material name="pink">
+    <color rgba="0.94 0.05 0.537 1.0"/>
+  </material>
+
   <material name="orange">
     <color rgba="${255/255} ${108/255} ${10/255} 1.0"/>
   </material>

@@ -18,30 +18,33 @@
   <!-- Base Link -->
   <link name="${prefix}base_link" />
   <link name="laser"/>
+
+  
   <joint name="base_link_to_laser" type="fixed">
     <origin xyz="0 0 0" rpy="0 0 ${PI}"/>
     <parent link="base_link"/>
     <child link="laser"/>
   </joint>
 
+
   <!-- Front-->
 
-  <link name="front">
-      <visual>
-        <origin xyz="0 0 0" rpy="$0 0 0"/>
-        <geometry>
-          <box size="0.1 0.1 0.1"/>
-        </geometry>
-        <material name="blue"/>
-      </visual>
-  </link>
+  <link name="${prefix}front_indicator">
+        <visual>
+          <origin xyz="${base_width/2} 0 ${base_height/2}" rpy="0 0 0"/>
+          <geometry>
+            <cylinder length="${wheel_len}" radius="${wheel_radius}"/>
+          </geometry>
+          <material name="pink"/>
+        </visual>
 
-    <joint name="base_to_front" type="fixed">
-      <parent link="base_link"/>
-      <child link="front"/>
-      <origin xyz="$0 0 ${base_height/2}" rpy="0 0 0"/>
+    </link>
+
+    <joint name="${prefix}chassis_link_to_front_indicator" type="fixed">
+      <parent link="${prefix}chassis_link" />
+      <child link="${prefix}front_indicator" />
+      <origin xyz="0 0 0" rpy="0 0 0"/>
     </joint>
-
   <!-- Chassis -->
 
   <link name="${prefix}chassis_link">
@@ -57,7 +60,7 @@
       <geometry>
         <box size="${base_length} ${base_width} ${base_height}"/>
       </geometry>
-      <material name="orange"/>
+      <material name="miku"/>
     </visual>
 
     <inertial>
