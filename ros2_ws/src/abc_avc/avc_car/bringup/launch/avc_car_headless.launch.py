@@ -33,6 +33,13 @@ def generate_launch_description():
     declared_arguments = []
     declared_arguments.append(
         DeclareLaunchArgument(
+            "gui",
+            default_value="true",
+            description="Start RViz2 automatically with this launch file.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
             "remap_odometry_tf",
             default_value="false",
             description="Remap odometry TF from the steering controller to the TF tree.",
@@ -40,6 +47,7 @@ def generate_launch_description():
     )
 
     # Initialize Arguments
+    gui = LaunchConfiguration("gui")
     remap_odometry_tf = LaunchConfiguration("remap_odometry_tf")
 
     # Get URDF via xacro
@@ -61,6 +69,14 @@ def generate_launch_description():
             "avc_car_controllers.yaml",
         ]
     )
+    rviz_config_file = PathJoinSubstitution(
+        [
+            FindPackageShare("avc_car_description"),
+            "avc_car/rviz",
+            "avc_car.rviz",
+        ]
+    )
+   
 
     control_node = Node(
         package="controller_manager",
@@ -73,6 +89,14 @@ def generate_launch_description():
         executable="robot_state_publisher",
         output="both",
         parameters=[robot_description],
+    )
+    rviz_node = Node(
+        package="rviz2",
+        executable="rviz2",
+        name="rviz2",
+        output="log",
+        arguments=["-d", rviz_config_file],
+        condition=IfCondition(gui),
     )
 
     joint_state_broadcaster_spawner = Node(
@@ -101,6 +125,19 @@ def generate_launch_description():
         arguments=["bicycle_steering_controller", "--param-file", robot_controllers],
         condition=UnlessCondition(remap_odometry_tf),
     )
+    robot_pose_broadcaster_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["pose_broadcaster", "--param-file", robot_controllers],
+    )
+
+    # Delay rviz start after `joint_state_broadcaster`
+    delay_rviz_after_joint_state_broadcaster_spawner = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=joint_state_broadcaster_spawner,
+            on_exit=[rviz_node],
+        )
+    )
 
     # Delay start of robot_controller after `joint_state_broadcaster`
     delay_robot_controller_spawner_after_joint_state_broadcaster_spawner = RegisterEventHandler(
@@ -110,12 +147,42 @@ def generate_launch_description():
         )
     )
 
+    twist_stamper = Node(
+        package='twist_stamper',
+        executable='twist_stamper',
+        remappings=[
+            ('/cmd_vel_in', '/cmd_vel'),
+            #('/cmd_vel_out', '/bicycle_steering_controller/reference'),
+            #('/cmd_vel_out', '/cmd_vel_nav'),
+            #('/cmd_vel_nav', '/cmd_vel_nav_stamped')
+            ('/cmd_vel_out', '/cmd_vel_nav_stamped')
+            ],
+        parameters=[{'frame_id': 'base_link'}]
+        )
+    
+    twist_mux_params = PathJoinSubstitution(
+        [
+            FindPackageShare("avc_car"),
+            "config",
+            "twist_mux.yaml",
+        ]
+    )
+    twist_mux = Node(
+        package='twist_mux',
+        executable='twist_mux',
+        parameters=[twist_mux_params],
+        remappings=[('/cmd_vel_out', '/bicycle_steering_controller/reference')], 
+        # the velocity comands are sent to the bicycle controller, which then send commands to the hardware interface
+    )
+
     nodes = [
+        twist_stamper,
+        twist_mux,
         control_node,
         robot_state_pub_bicycle_node,
         joint_state_broadcaster_spawner,
         delay_robot_controller_spawner_after_joint_state_broadcaster_spawner,
-
+        robot_pose_broadcaster_spawner,
     ]
 
     return LaunchDescription(declared_arguments + nodes)
