@@ -48,7 +48,7 @@ def generate_launch_description():
                        'bt_navigator',
                        'waypoint_follower',
                        'velocity_smoother']
-    map_path = os.path.join(bringup_dir, 'bringup','maps', 'map.yaml')
+    map_path = os.path.join(bringup_dir,'maps', 'map.yaml') # this is the file path from install apparently....
 
     # Map fully qualified names to relative ones so the node's namespace can be prepended.
     # In case of the transforms (tf), currently, there doesn't seem to be a better alternative
