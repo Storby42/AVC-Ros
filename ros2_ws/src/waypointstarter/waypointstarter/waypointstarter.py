@@ -20,7 +20,7 @@ class waypointstarter(Node):
         # Set up subscriber and publisher nodes
         # the "self.joy_callback" means that upon receiving a message from the topic, ->
         # the function "joy_callback" will be called AUTOMATICALLY with the message data as its argument
-        self.subscription_joy = self.create_subscription(Joy, '/joy', self.joy_callback, 10)
+        self.subscription_joy = self.create_subscription(Joy, '/joy_start', self.joy_callback, 10)
 
         waypoints_dir = get_package_share_directory('waypointstarter') 
         parameters_file_dir = os.path.join(waypoints_dir, 'data') 
