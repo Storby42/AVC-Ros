@@ -1,4 +1,5 @@
 from setuptools import find_packages, setup
+from glob import glob
 
 package_name = 'waypointstarter'
 
@@ -24,6 +25,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
+            'waypointstarter = waypointstarter.waypointstarter:main',
         ],
     },
 )

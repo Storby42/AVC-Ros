@@ -11,6 +11,8 @@ from robot_navigator import BasicNavigator, NavigationResult # Helper module
 from geometry_msgs.msg  import Twist
 from sensor_msgs.msg import Joy
 from ament_index_python.packages import get_package_share_directory
+import os
+import yaml
 
  
 class waypointstarter(Node):
@@ -26,7 +28,7 @@ class waypointstarter(Node):
         parameters_file_dir = os.path.join(waypoints_dir, 'data') 
         parameters_file_path = os.path.join(parameters_file_dir, 'goalstest.yaml')
 
-        waypoint_list = []
+        self.waypoint_list = []
         with open(parameters_file_path, 'r') as file:
             waypoints=yaml.safe_load(file)
          for key, value in waypoints['waypoints'].items():
@@ -43,16 +45,16 @@ class waypointstarter(Node):
             pose.pose.orientation.z = value['orientation'][2]
             pose.pose.orientation.w = value['orientation'][3]
             
-            waypoint_list.append(pose)
+            self.waypoint_list.append(pose)
       
     def joy_callback(self, data):
         if data.buttons[0]==1: # TODO: change to whatever button press is; if the joy says start, then send the waypoints
             # Start the ROS 2 Python Client Library
-            rclpy.init()
+            #rclpy.init()
             
             # Launch the ROS 2 Navigation Stack
             navigator = BasicNavigator()
-            navigator.followWaypoints(waypoint_list)
+            navigator.followWaypoints(self.waypoint_list)
 
             navigator.lifecycleShutdown()
             exit(0)
