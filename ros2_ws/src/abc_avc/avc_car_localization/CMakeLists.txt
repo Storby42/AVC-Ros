@@ -5,7 +5,7 @@ find_package(ament_cmake REQUIRED)
 
 install(
   DIRECTORY config launch
-  DESTINATION share/${PROJECT_NAME}/avc_car_localization
+  DESTINATION share/avc_car_localization
 )
 
 
