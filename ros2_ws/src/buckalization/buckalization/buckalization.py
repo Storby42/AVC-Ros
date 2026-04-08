@@ -9,44 +9,56 @@ to get a more accurate position and publish it (vision corrected pose)
 
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import QoSProfile
+from rclpy.clock import Clock
+
+from message_filters import Subscriber, ApproximateTimeSynchronizer
+
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from nav_msgs.msg import Odometry
 from vision_msgs.msg import Detection3DArray
-import math
+
 from tf_transformations import euler_from_quaternion
 from tf_transformations import quaternion_from_euler
-import csv
 from ament_index_python.packages import get_package_share_directory
-
+import csv
 import os
+import math
 
 class BuckalizationNode(Node):
     def __init__(self):
         super().__init__('buckalization')
-
+        qos = QoSProfile(depth=10)
         # Set up subscriber and publisher nodes
         # subscribe to technoblad-- i mean vision get bucket pos, and fused odom for position and heading
-        self.subscription_vision = self.create_subscription(Detection3DArray, '/vision_measurements', self.vision_callback, 10) # PLACEHOLDER TOPIC NAME
+        self.subscription_vision = self.create_subscription(Detection3DArray, '/fused_vision_measurements', self.vision_callback, 10) # PLACEHOLDER TOPIC NAME
         self.subscription_fused_odom = self.create_subscription(Odometry, '/odometry/global', self.fusedOdom_callback, 10)
 
         self.publisher_buckalization = self.create_publisher(PoseWithCovarianceStamped, '/buckalization', 10)
 
-        # self.prev_time = self.get_clock().now().nanoseconds / 10**9 # initialize time checkpoint
-
         # tunable values
-        self.MINIMUM_BUCKET_CONFIDENCE = .5 # percent val between 0-1
+        self.MINIMUM_BUCKET_CONFIDENCE = .1 # percent val between 0-1
 
+        # initialize the known buckets
         self.known_buckets = []
-
+        self.color_lookup = {
+            "yellow" : 0,
+            "red" : 1,
+            "blue" : 2
+        }
         buckalization_dir = get_package_share_directory('buckalization') 
-        parameters_file_dir = os.path.join(buckalization_dir, 'data') 
-        parameters_file_path = os.path.join(parameters_file_dir, 'buckets_testing.csv')
-        
+        parameters_file_path = os.path.join(buckalization_dir, 'data', 'buckets.csv') 
         with open(parameters_file_path, newline='\n') as csvfile:
             bucketreader = csv.reader(csvfile, delimiter=',', quotechar='|')
             for row in bucketreader:
-                self.known_buckets.append(self.Bucket(float(row[0]), float(row[1]), row[2]))
+                self.known_buckets.append(self.Bucket(worldx=float(row[0]), worldy=float(row[1]), color=self.color_lookup[row[2]]))
             print("Buckets loaded")
+
+        queue_size = 10
+        max_delay = 0.05
+        self.time_sync = ApproximateTimeSynchronizer([self.subscription_vision, self.subscription_fused_odom],
+                                                     queue_size, max_delay)
+        self.time_sync.registerCallback(self.SyncCallback)
 
         # variables for the calcs
         self.fusedOdom = None # stored as a 3 long tuple; x, y, yaw. calculated values.
@@ -132,26 +144,33 @@ class BuckalizationNode(Node):
     
     # Buckets are in this format: https://docs.ros.org/en/lunar/api/vision_msgs/html/msg/Detection3DArray.html
     # relX (float), relY (float), color (uppercase str), time (idk), confidence (float 0-1)
-    def vision_callback(self, data): # there will be some rel x rel y color confidence
+    def SyncCallback(self, data): # there will be some rel x rel y color confidence
         if len(data.detections) == 0:
             return
 
         # change the msg given by the vision node into nice Bucket objects
         buckified = []
         for detection in data.detections:
-            hi_con = 0.0
-            hi_con_bucket = None
-            for result in detection.result:
-                if result.score > hi_con:
-                    hi_con = result.score
-                    hi_con_bucket = result
-            if hi_con > self.MINIMUM_BUCKET_CONFIDENCE: # also do filtering for confidence levels here
-                buckified.append(self.Bucket(
-                    color = hi_con_bucket.id,
-                    relx = hi_con_bucket.pose.pose.position.x,
-                    rely = hi_con_bucket.pose.pose.position.y,
-                    confidence = hi_con
-                ))
+            buckified.append(self.Bucket(
+                color = detection.result[0].hypothesis.class_id,
+                confidence = detection.result[0].hypothesis.score,
+                relx = detection.result[0].pose.pose.position.x,
+                rely = detection.result[0].pose.pose.position.y
+            ))
+            
+            # hi_con = 0.0 # THIS PORTION IS OBSELETE. YOLO DOESN'T OUTPUT > 1 RESULT PER DETECTION
+            # hi_con_bucket = None
+            # for result in detection.results:
+            #     if result.hypothesis.score > hi_con:
+            #         hi_con = result.hypothesis.score
+            #         hi_con_bucket = result
+            # if hi_con > self.MINIMUM_BUCKET_CONFIDENCE: #  do filtering for confidence levels here
+            #     buckified.append(self.Bucket(
+            #         color = hi_con_bucket.hypothesis.class_id,
+            #         relx = hi_con_bucket.pose.pose.position.x,
+            #         rely = hi_con_bucket.pose.pose.position.y,
+            #         confidence = hi_con
+            #     ))
         
         # choose the bucket of highest confidence (and start keeping track of red buckets)
         redbucks = []
