@@ -6,7 +6,7 @@ import rclpy # Python client library for ROS 2
 from rclpy.node import Node
 
  
-from robot_navigator import BasicNavigator, NavigationResult # Helper module
+from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult # Helper module
 
 from geometry_msgs.msg  import Twist
 from sensor_msgs.msg import Joy
@@ -29,12 +29,13 @@ class waypointstarter(Node):
         parameters_file_path = os.path.join(parameters_file_dir, 'goalstest.yaml')
 
         self.waypoint_list = []
+        self.navigator=BasicNavigator()
         with open(parameters_file_path, 'r') as file:
             waypoints=yaml.safe_load(file)
          for key, value in waypoints['waypoints'].items():
             pose = PoseStamped()
             pose.header.frame_id = 'map'
-            pose.header.stamp = navigator.get_clock().now().to_msg()
+            pose.header.stamp = self.navigator.get_clock().now().to_msg()
             
             pose.pose.position.x = value['pose'][0]
             pose.pose.position.y = value['pose'][1]
@@ -53,10 +54,10 @@ class waypointstarter(Node):
             #rclpy.init()
             
             # Launch the ROS 2 Navigation Stack
-            navigator = BasicNavigator()
-            navigator.followWaypoints(self.waypoint_list)
+            # navigator = BasicNavigator()
+            self.navigator.followWaypoints(self.waypoint_list)
 
-            navigator.lifecycleShutdown()
+            self.navigator.lifecycleShutdown()
             exit(0)
         else: # else, do nothing
             return 
