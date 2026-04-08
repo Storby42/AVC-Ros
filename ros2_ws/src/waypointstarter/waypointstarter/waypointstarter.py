@@ -4,6 +4,7 @@ from geometry_msgs.msg import PoseStamped # Pose with ref frame and timestamp
 from rclpy.duration import Duration # Handles time for ROS 2
 import rclpy # Python client library for ROS 2
 from rclpy.node import Node
+from rclpy.executors import MultiThreadedExecutor
 
  
 from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult # Helper module
@@ -15,7 +16,7 @@ import os
 import yaml
 
  
-class waypointstarter(Node):
+class waypointstarterNode(Node):
     def __init__(self):
         super().__init__('waypointstarter')
 
@@ -32,19 +33,19 @@ class waypointstarter(Node):
         self.navigator=BasicNavigator()
         with open(parameters_file_path, 'r') as file:
             waypoints=yaml.safe_load(file)
-         for key, value in waypoints['waypoints'].items():
+        for key, value in waypoints['waypoints'].items():
             pose = PoseStamped()
             pose.header.frame_id = 'map'
             pose.header.stamp = self.navigator.get_clock().now().to_msg()
             
-            pose.pose.position.x = value['pose'][0]
-            pose.pose.position.y = value['pose'][1]
-            pose.pose.position.z = value['pose'][2]
+            pose.pose.position.x = float(value['pose'][0])
+            pose.pose.position.y = float(value['pose'][1])
+            pose.pose.position.z = float(value['pose'][2])
             
-            pose.pose.orientation.x = value['orientation'][0]
-            pose.pose.orientation.y = value['orientation'][1]
-            pose.pose.orientation.z = value['orientation'][2]
-            pose.pose.orientation.w = value['orientation'][3]
+            pose.pose.orientation.x = float(value['orientation'][0])
+            pose.pose.orientation.y = float(value['orientation'][1])
+            pose.pose.orientation.z = float(value['orientation'][2])
+            pose.pose.orientation.w = float(value['orientation'][3])
             
             self.waypoint_list.append(pose)
       
@@ -65,14 +66,24 @@ class waypointstarter(Node):
 def main(args=None):
     rclpy.init(args=args)
 
-    waypointstarter = waypointstarter()
+    waypointstarter = waypointstarterNode()
 
-    rclpy.spin(waypointstarter)
+    #rclpy.spin(waypointstarter)
 
     # Destroy the node explicitly
     # (optional - otherwise it will be done automatically when the garbage collector destroys the node object)
-    waypointstarter.destroy_node()
-    rclpy.shutdown()
+    #waypointstarter.destroy_node()
+
+    #rclpy.shutdown()
+    
+    executor = MultiThreadedExecutor()
+    executor.add_node(waypointstarter)
+    
+    try:
+        executor.spin()
+    finally:
+        waypointstarter.destroy_node()
+        rclpy.shutdown()
 
 if __name__ == '__main__':
     main()
