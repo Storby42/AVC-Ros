@@ -3,10 +3,8 @@ from rclpy.node import Node
 from rclpy.qos import QoSProfile
 from rclpy.clock import Clock
 
-from message_filters import Subscriber, ApproximateTimeSynchronizer
-
 from nav_msgs.msg import Odometry
-from vision_msgs.msg import Detection3DArray
+from vision_msgs.msg import Detection3DArray, Detection3D, ObjectHypothesisWithPose
 
 
 class buckalizer_LSD_node(Node):
@@ -24,16 +22,50 @@ class buckalizer_LSD_node(Node):
         self.now = Clock().now().to_msg()
 
         odom.header.stamp = self.now
+        odom.header.frame_id = "odom"
+        odom.pose.pose.position.x = -7.126
+        odom.pose.pose.position.y = 9.767
+        odom.pose.pose.position.z = 0.0
+
+        odom.pose.pose.orientation.x = 0.0
+        odom.pose.pose.orientation.y = 0.0
+        odom.pose.pose.orientation.z = -0.259
+        odom.pose.pose.orientation.w = 0.966
+
         print("dummy odom pub'd")
         self.odom_pub.publish(odom)
 
     def SecondTimerCallback(self):
-        det = Detection3DArray()
+        dets = Detection3DArray()
         self.now = Clock().now().to_msg()
 
-        det.header.stamp = self.now
+        dets.header.stamp = self.now
+        dets.header.frame_id = "map"
+        
+        det1 = Detection3D()
+        det1.header.stamp = self.now
+        det1.header.frame_id = "map"
+        res1 = ObjectHypothesisWithPose()
+        res1.pose.pose.position.x = 14.7
+        res1.pose.pose.position.y = 13.2
+        res1.hypothesis.score = .9
+        res1.hypothesis.class_id = "1"
+        det1.results.append(res1)
+        dets.detections.append(det1)
+
+        det2 = Detection3D()
+        det2.header.stamp = self.now
+        det2.header.frame_id = "map"
+        res2 = ObjectHypothesisWithPose()
+        res2.pose.pose.position.x = 14.7
+        res2.pose.pose.position.y = 23.2
+        res2.hypothesis.score = 0.7
+        res2.hypothesis.class_id = "1"
+        det2.results.append(res2)
+        dets.detections.append(det2)
+
         print("dummy det pub'd")
-        self.det_pub.publish(det)
+        self.det_pub.publish(dets)
 
 def main(args=None):
     rclpy.init(args=args)
