@@ -179,11 +179,11 @@ def generate_launch_description():
                 PythonLaunchDescriptionSource([os.path.join(
                     get_package_share_directory('robot_localization'), 'launch', 'ekf.launch.py')]),
     )
-    navigation = IncludeLaunchDescription(
-                PythonLaunchDescriptionSource([os.path.join(
-                    get_package_share_directory('robot_description'), 'launch', 'avc_navigation.launch.py')]),
-                    launch_arguments={'params_file': os.path.join(get_package_share_directory('robot_description'), 'config', 'nav2_params.yaml')}.items()
-    )
+    #navigation = IncludeLaunchDescription(
+      #          PythonLaunchDescriptionSource([os.path.join(
+        #            get_package_share_directory('robot_description'), 'launch', 'avc_navigation.launch.py')]),
+          #          launch_arguments={'params_file': os.path.join(get_package_share_directory('robot_description'), 'config', 'nav2_params.yaml')}.items()
+   # )
 
     nodes = [
         twist_stamper,
@@ -194,7 +194,7 @@ def generate_launch_description():
         delay_rviz_after_joint_state_broadcaster_spawner,
         delay_robot_controller_spawner_after_joint_state_broadcaster_spawner,
         robot_pose_broadcaster_spawner,
-        navigation,
+        #navigation,
     ]
 
     return LaunchDescription(declared_arguments + nodes)
