@@ -60,6 +60,7 @@ class waypointstarterNode(Node):
 
             self.navigator.lifecycleShutdown()
             exit(0)
+		
         else: # else, do nothing
             return 
 
