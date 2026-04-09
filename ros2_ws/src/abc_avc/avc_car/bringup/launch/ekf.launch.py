@@ -17,7 +17,7 @@ from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
     # creating the path to find the ekf.yaml files (robot_localization -> config -> ekf.yaml)
-    robot_localization_dir = get_package_share_directory('avc_car_localization') 
+    robot_localization_dir = get_package_share_directory('avc_car') 
     parameters_file_dir = os.path.join(robot_localization_dir, 'config') 
     parameters_file_path = os.path.join(parameters_file_dir, 'ekf.yaml')
 
