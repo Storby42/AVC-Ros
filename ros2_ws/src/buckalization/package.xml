@@ -15,7 +15,9 @@
   <depend>rclpy</depend>
   <depend>geometry_msgs</depend>
   <depend>nav_msgs</depend>
+  <depend>vision_msgs</depend>
   <depend>python3-numpy</depend>
+  <depend>message_filters</depend>
   <depend>tf_transformations</depend>
   <depend>os</depend>
   <depend>ament_index_python</depend>

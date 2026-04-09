@@ -1,55 +1,67 @@
 '''
 PURPOSE: use bucket relative coords and color + current estimated pose
-INPUT:
-    from vision: bucket rel coords, bucket color, image timestamp, bucket confidence
-    from fused (kalman thing) odom: history ~40ms?
-
 to get a more accurate position and publish it (vision corrected pose)
+
+INPUT:
+    from vision: 3D detection array
+    from fused (kalman thing) odom: ...Odometry
+OUTPUT:
+    PoseWithCovarianceStamped
 '''
 
 import rclpy
 from rclpy.node import Node
+
+from message_filters import Subscriber, ApproximateTimeSynchronizer
+
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from nav_msgs.msg import Odometry
 from vision_msgs.msg import Detection3DArray
-import math
+
 from tf_transformations import euler_from_quaternion
 from tf_transformations import quaternion_from_euler
-import csv
 from ament_index_python.packages import get_package_share_directory
-
+import csv
 import os
+import math
 
 class BuckalizationNode(Node):
     def __init__(self):
         super().__init__('buckalization')
 
+        # tunable values
+        self.MINIMUM_BUCKET_CONFIDENCE = .1 # percent val between 0-1
+        self.queue_size = 10
+        self.max_delay = .1 # max time diff between det and odom in s
+
         # Set up subscriber and publisher nodes
         # subscribe to technoblad-- i mean vision get bucket pos, and fused odom for position and heading
-        self.subscription_vision = self.create_subscription(Detection3DArray, '/vision_measurements', self.vision_callback, 10) # PLACEHOLDER TOPIC NAME
-        self.subscription_fused_odom = self.create_subscription(Odometry, '/odometry/global', self.fusedOdom_callback, 10)
+        self.subscription_vision = Subscriber(self, Detection3DArray, '/fused_vision_measurements')
+        self.subscription_fused_odom = Subscriber(self, Odometry, '/odometry/global')
 
         self.publisher_buckalization = self.create_publisher(PoseWithCovarianceStamped, '/buckalization', 10)
 
-        # self.prev_time = self.get_clock().now().nanoseconds / 10**9 # initialize time checkpoint
+        self.time_sync = ApproximateTimeSynchronizer([self.subscription_vision, self.subscription_fused_odom],
+                                                     self.queue_size, self.max_delay)
+        self.time_sync.registerCallback(self.SyncCallback)
 
-        # tunable values
-        self.MINIMUM_BUCKET_CONFIDENCE = .5 # percent val between 0-1
-
+        # initialize the known buckets
         self.known_buckets = []
-
+        self.color_lookup = {
+            "yellow" : 0,
+            "red" : 1,
+            "blue" : 2
+        }
         buckalization_dir = get_package_share_directory('buckalization') 
-        parameters_file_dir = os.path.join(buckalization_dir, 'data') 
-        parameters_file_path = os.path.join(parameters_file_dir, 'buckets_testing.csv')
-        
+        parameters_file_path = os.path.join(buckalization_dir, 'data', 'buckets.csv') 
         with open(parameters_file_path, newline='\n') as csvfile:
             bucketreader = csv.reader(csvfile, delimiter=',', quotechar='|')
             for row in bucketreader:
-                self.known_buckets.append(self.Bucket(float(row[0]), float(row[1]), row[2]))
+                self.known_buckets.append(self.Bucket(worldx=float(row[0]), worldy=float(row[1]), color=self.color_lookup[row[2]]))
             print("Buckets loaded")
 
         # variables for the calcs
-        self.fusedOdom = None # stored as a 3 long tuple; x, y, yaw. calculated values.
+        self.fusedOdom = None # stored as a 3 long list; x, y, yaw. calculated values.
 
         # set up output pose params
         self.visionX = 0.0
@@ -107,12 +119,14 @@ class BuckalizationNode(Node):
         msg = PoseWithCovarianceStamped()
         # heading (timestamp is most important bit)
         msg.header.stamp = self.get_clock().now().to_msg()
+        msg.header.frame_id = "map"
         # point
         msg.pose.pose.position.x = self.visionX
         msg.pose.pose.position.y = self.visionY
-        msg.pose.pose.position.z = 0
+        msg.pose.pose.position.z = 0.0
+        print(f"New position determined to be ({self.visionX}, {self.visionY}) at {self.visionYaw}")
         # quaternion (orientation)
-        x, y, z, w, = quaternion_from_euler(0, 0, self.visionYaw)
+        x, y, z, w, = quaternion_from_euler(0.0, 0.0, self.visionYaw)
         msg.pose.pose.orientation.x = x
         msg.pose.pose.orientation.y = y
         msg.pose.pose.orientation.z = z
@@ -121,36 +135,36 @@ class BuckalizationNode(Node):
         # (x, y, z, rotation about X axis, rotation about Y axis, rotation about Z axis)
         # FIND THE VARIANCES OF X Y YAW. Assumed 0 for z, pitch, roll, and covariances
         msg.pose.covariance = [
-            .05, 0, 0, 0, 0, 0,
-            0, .05, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 1
+            0.05, 0.0, 0.0, 0.0, 0.0, 0.0,
+            0.0, 0.05, 0.0, 0.0, 0.0, 0.0,
+            0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+            0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+            0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+            0.0, 0.0, 0.0, 0.0, 0.0, 1.0
             ]
         self.publisher_buckalization.publish(msg)
     
-    # Buckets are in this format: https://docs.ros.org/en/lunar/api/vision_msgs/html/msg/Detection3DArray.html
+    # dets are Detection3D arrays
     # relX (float), relY (float), color (uppercase str), time (idk), confidence (float 0-1)
-    def vision_callback(self, data): # there will be some rel x rel y color confidence
-        if len(data.detections) == 0:
+    def SyncCallback(self, dets, odom): # there will be some rel x rel y color confidence
+        print("OMG THEYRE SYNCED")
+        if len(dets.detections) == 0:
             return
+        
+        self.fusedOdom = [odom.pose.pose.position.x, odom.pose.pose.position.y, 0]
+        orientations = odom.pose.pose.orientation.x, odom.pose.pose.orientation.y, odom.pose.pose.orientation.z, odom.pose.pose.orientation.w
+        _, _, self.fusedOdom[2] = euler_from_quaternion(orientations)
+        # yaw is in rad btw
 
         # change the msg given by the vision node into nice Bucket objects
         buckified = []
-        for detection in data.detections:
-            hi_con = 0.0
-            hi_con_bucket = None
-            for result in detection.result:
-                if result.score > hi_con:
-                    hi_con = result.score
-                    hi_con_bucket = result
-            if hi_con > self.MINIMUM_BUCKET_CONFIDENCE: # also do filtering for confidence levels here
+        for detection in dets.detections:
+            if detection.results[0].hypothesis.score > self.MINIMUM_BUCKET_CONFIDENCE: # (only if the confidence is high enough)
                 buckified.append(self.Bucket(
-                    color = hi_con_bucket.id,
-                    relx = hi_con_bucket.pose.pose.position.x,
-                    rely = hi_con_bucket.pose.pose.position.y,
-                    confidence = hi_con
+                    color = detection.results[0].hypothesis.class_id,
+                    confidence = detection.results[0].hypothesis.score,
+                    relx = detection.results[0].pose.pose.position.x,
+                    rely = detection.results[0].pose.pose.position.y
                 ))
         
         # choose the bucket of highest confidence (and start keeping track of red buckets)
@@ -159,7 +173,7 @@ class BuckalizationNode(Node):
         del buckets_by_con[3:]
         # ID all buckets
         for bucket in buckets_by_con:
-            bucket.id_bucket(fusedOdom = self.fusedOdom, known_buckets=self.known_buckets)
+            bucket.id_bucket(fusedOdom=self.fusedOdom, known_buckets=self.known_buckets)
             if bucket.color == 0:
                 redbucks.append(bucket)
 
@@ -176,7 +190,7 @@ class BuckalizationNode(Node):
         self.visionY = self.fusedOdom[1] - (buckets_by_con[0].worldy - self.known_buckets[buckets_by_con[0].id].worldy)
         
         # 2. find rotation (around BOHC) to get the 2nd bucket into the angle that makes sense (again based on known map)
-        if len(data.detections) >= 2: # RENAME ONCE MESSAGE IS BETTER KNOWN
+        if len(dets.detections) >= 2: # RENAME ONCE MESSAGE IS BETTER KNOWN
             known_bucket_1 = self.known_buckets[buckets_by_con[0].id]
             known_bucket_2 = self.known_buckets[buckets_by_con[1].id]
 
@@ -185,14 +199,14 @@ class BuckalizationNode(Node):
             theta2 = math.atan2(buckets_by_con[1].worldy - buckets_by_con[0].worldy, buckets_by_con[1].worldx - buckets_by_con[0].worldx)
             ccw_rot = theta1 - theta2
 
-            self.visionYaw = self.fusedOdom + ccw_rot
+            self.visionYaw = self.fusedOdom[2] + ccw_rot
 
             # 3. METHOD 1: rotate the car's known position around that same place
             # rotation point = (xr, yr)
             # new x = (x-xr)*cos(theta) - (y-yr)*sin(theta) + xr
             # new y = (x-xr)*sin(theta) + (y-yr)*cos(theta) + yr
-            visionX, visionY = ((visionX-known_bucket_1.worldx)*math.cos(ccw_rot) - (visionY-known_bucket_1.worldy)*math.sin(ccw_rot) + known_bucket_1.worldx,
-                                (visionY-known_bucket_1.worldy)*math.cos(ccw_rot) + (visionX-known_bucket_1.worldx)*math.sin(ccw_rot) + known_bucket_1.worldy)
+            self.visionX, self.visionY = ((self.visionX-known_bucket_1.worldx)*math.cos(ccw_rot) - (self.visionY-known_bucket_1.worldy)*math.sin(ccw_rot) + known_bucket_1.worldx,
+                                (self.visionY-known_bucket_1.worldy)*math.cos(ccw_rot) + (self.visionX-known_bucket_1.worldx)*math.sin(ccw_rot) + known_bucket_1.worldy)
             
             # 3b. METHOD 2: do circle intersections. Closest one is prolly right
             # x1, y1, x2, y2 = self.get_intersections(known_bucket_1.worldx, known_bucket_1.worldy, math.sqrt(buckets_by_con[0].relx**2 + buckets_by_con[0].rely**2), known_bucket_2.worldx, known_bucket_2.worldy, math.sqrt(buckets_by_con[1].relx**2 + buckets_by_con[1].rely**2))
@@ -236,11 +250,6 @@ class BuckalizationNode(Node):
             y4=y2+h*(x1-x0)/d
             
             return (x3, y3, x4, y4)
-
-    def fusedOdom_callback(self, data):
-        self.fusedOdom = (data.pose.pose.position.x, data.pose.pose.position.y, 0)
-        _, _, self.fusedOdom[2] = euler_from_quaternion(data.pose.pose.orientation.x, data.pose.pose.orientation.y, data.pose.pose.orientation.z, data.pose.pose.orientation.w)
-        # yaw is in rad btw
 
 def main(args=None):
     rclpy.init(args=args)

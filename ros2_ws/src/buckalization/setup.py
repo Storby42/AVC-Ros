@@ -24,7 +24,8 @@ setup(
     
     entry_points={
         'console_scripts': [
-            'buckalization=buckalization.buckalization:main'
+            'buckalization=buckalization.buckalization:main',
+            'buckalizer_LSD=buckalization.buckalizer_LSD:main'
         ],
     },
 )

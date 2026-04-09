@@ -39,10 +39,16 @@ class Bucket():
         return best_id
 
 known_buckets = []
+color_lookup = {
+            "yellow" : 0,
+            "red" : 1,
+            "blue" : 2
+        }
+
 with open('buckets_testing_testing.csv', newline='\n') as csvfile:
     bucketreader = csv.reader(csvfile, delimiter=',', quotechar='|')
     for row in bucketreader:
-        known_buckets.append(Bucket(worldx=float(row[0]), worldy=float(row[1]), color=row[2]))
+        known_buckets.append(Bucket(worldx=float(row[0]), worldy=float(row[1]), color=color_lookup[row[2]]))
         print(f"loaded color {known_buckets[-1].color} bucket at ({known_buckets[-1].worldx}, {known_buckets[-1].worldy})")
 
 # simulated vision data
