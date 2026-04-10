@@ -40,7 +40,7 @@
   </joint>
 
   <link name="camera_frame_right"/>
-  <joint name="stereo_center_to_left" type="fixed">
+  <joint name="stereo_center_to_right" type="fixed">
     <origin xyz="0 -0.128 0" rpy="0 0 0"/>
     <parent link="stereo_camera_center"/>
     <child link="camera_frame_right"/>
