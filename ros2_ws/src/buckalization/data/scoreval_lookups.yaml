@@ -1,0 +1,7 @@
+relative_dist_limits : !!python/tuple [3, 2, 8] # (ideal, min, max) in meters. Ideal is wherever it does detections best.
+min_confidence : !!python/tuple [0.3] # min confidence
+max_id_dist : !!python/tuple [2] #maximum distance in meters that the transform correction is allowed to be
+# expected (width, height, min width, max width, min height, max height) in meters of buckets:
+short_bucket : !!python/tuple [0.3, 0.37, 0.2, 0.4, 0.25, 0.5]
+tall_bucket : !!python/tuple [0.3, 0.74, 0.2, 0.4, 0.6, 1]
+max_intrabucket_dist_diff : !!python/tuple [.5] # specifically for if 2 red buckets are measured to be significantly closer together/further apart

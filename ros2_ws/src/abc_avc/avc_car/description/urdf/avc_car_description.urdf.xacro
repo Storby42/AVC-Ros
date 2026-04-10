@@ -17,13 +17,33 @@
 
   <!-- Base Link -->
   <link name="${prefix}base_link" />
-  <link name="laser"/>
 
-  
+  <link name="laser"/>
   <joint name="base_link_to_laser" type="fixed">
-    <origin xyz="0 0 0" rpy="0 0 ${PI}"/>
+    <origin xyz="0.1 0 0.3" rpy="0 0 ${PI}"/>
     <parent link="base_link"/>
     <child link="laser"/>
+  </joint>
+
+  <link name="stereo_camera_center"/>
+  <joint name="base_link_to_stereo_center" type="fixed">
+    <origin xyz="0.2 0 0.22" rpy="0 0 0"/>
+    <parent link="base_link"/>
+    <child link="stereo_camera_center"/>
+  </joint>
+
+  <link name="camera_frame_left"/>
+  <joint name="stereo_center_to_left" type="fixed">
+    <origin xyz="0 0.128 0" rpy="0 0 0"/>
+    <parent link="stereo_camera_center"/>
+    <child link="camera_frame_left"/>
+  </joint>
+
+  <link name="camera_frame_right"/>
+  <joint name="stereo_center_to_left" type="fixed">
+    <origin xyz="0 -0.128 0" rpy="0 0 0"/>
+    <parent link="stereo_camera_center"/>
+    <child link="camera_frame_right"/>
   </joint>
 
 

@@ -180,9 +180,9 @@ def generate_launch_description():
                     get_package_share_directory('robot_localization'), 'launch', 'ekf.launch.py')]),
     )
    # navigation = IncludeLaunchDescription(
-                PythonLaunchDescriptionSource([os.path.join(
-                    get_package_share_directory('robot_description'), 'launch', 'avc_navigation.launch.py')]),
-                    launch_arguments={'params_file': os.path.join(get_package_share_directory('robot_description'), 'config', 'nav2_params.yaml')}.items()
+   #     PythonLaunchDescriptionSource([os.path.join(
+    #        get_package_share_directory('robot_description'), 'launch', 'avc_navigation.launch.py')]),
+    #        launch_arguments={'params_file': os.path.join(get_package_share_directory('robot_description'), 'config', 'nav2_params.yaml')}.items()
     #)
 
     nodes = [
