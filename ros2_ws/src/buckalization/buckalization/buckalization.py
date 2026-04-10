@@ -33,7 +33,7 @@ class BuckalizationNode(Node):
         # tunable values
         self.MINIMUM_BUCKET_CONFIDENCE = .1 # percent val between 0-1
         self.QUEUE_SIZE = 10
-        self.max_delay = .1 # max time diff between det and odom in s
+        self.MAX_DELAY = .1 # max time diff between det and odom in s
         self.BASE_LINK_OFFSET_X = .2 # in m. since the messages sent are relative to the left camera
         self.BASE_LINK_OFFSET_Y = .128
 
@@ -45,7 +45,7 @@ class BuckalizationNode(Node):
         self.publisher_buckalization = self.create_publisher(PoseWithCovarianceStamped, '/buckalization', 10)
 
         self.time_sync = ApproximateTimeSynchronizer([self.subscription_vision, self.subscription_fused_odom],
-                                                     self.queue_size, self.max_delay)
+                                                     self.QUEUE_SIZE, self.MAX_DELAY)
         self.time_sync.registerCallback(self.SyncCallback)
 
         # initialize the known buckets
