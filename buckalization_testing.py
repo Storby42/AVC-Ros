@@ -26,7 +26,7 @@ class Bucket():
         best_dist = float('inf')
 
         for i, bucket in enumerate(known_buckets):
-            if bucket.color == self.color:
+            if bucket.color != self.color:
                 continue
             # use pseudo distance to find closest real counterpart
             dist = (bucket.worldx - self.worldx) ** 2 + (bucket.worldy - self.worldy) ** 2
@@ -52,7 +52,7 @@ with open('buckets_testing_testing.csv', newline='\n') as csvfile:
         print(f"loaded color {known_buckets[-1].color} bucket at ({known_buckets[-1].worldx}, {known_buckets[-1].worldy})")
 
 # simulated vision data
-buckified = [Bucket(relx=14.7, rely=13.2, color=1, confidence=.9), Bucket(relx=14.7, rely=23.2, color=1, confidence=.7)]
+buckified = [Bucket(relx=14.7, rely=13.2, color=0, confidence=.9), Bucket(relx=14.7, rely=23.2, color=0, confidence=.7)]
 fakeodom = [-7.126, 9.767, -math.pi/6]
 
 # choose the bucket of highest confidence and find its real identity
