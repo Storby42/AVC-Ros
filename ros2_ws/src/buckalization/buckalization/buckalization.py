@@ -68,7 +68,8 @@ class BuckalizationNode(Node):
             "relative_dist_limits" : sv_yaml['relative_dist_limits'], # (ideal, min, max) in meters. Ideal is wherever it does detections best.
             "min_confidence" : sv_yaml['min_confidence'], # min confidence
             "max_id_dist" : sv_yaml['max_id_dist'], #maximum distance in meters that the transform correction is allowed to be
-            "max_intrabucket_dist_diff" : sv_yaml['max_intrabucket_dist_diff']
+            "max_intrabucket_dist_diff" : sv_yaml['max_intrabucket_dist_diff'],
+            "max_translation" : sv_yaml['max_translation']
         } #should probably load this from a params file so we don't go insane while tuning it
 
         buckets_file_path = os.path.join(parameters_file_path, 'buckets_testing.csv')
@@ -160,13 +161,13 @@ class BuckalizationNode(Node):
                 self.isvalid = False
                 print(f"Color {self.color} detection at ({self.worldx}, {self.worldy}) is being ignored for being too far ({distance_to_detection}) away.")
 
-            #Check that transform isn't absurdly massive
+            #Check that transform isn't absurdly massive (between bucket and known bucket)
             if(self.id_dist <= self.scorevaldict["max_id_dist"]):
                 self.scores["correction_score"] = self.id_dist/self.scorevaldict["max_id_dist"]
             else:
                 self.scores["correction_score"] = self.id_dist
                 #self.validDetection = False
-                print(f"Mild warning: color {self.color} detection at ({self.worldx}, {self.worldy}) is pretty far ({self.id_dist/self.scorevaldict["max_id_dist"]}) from any known buckets.")
+                print(f"Mild warning: color {self.color} detection at ({self.worldx}, {self.worldy}) is pretty far ({self.id_dist}) from any known buckets.")
             
             #Ignore correction distance score for now, it probably makes more sense to have that after handling red buckets and doing transform stuff.
 
@@ -211,12 +212,12 @@ class BuckalizationNode(Node):
         # (x, y, z, rotation about X axis, rotation about Y axis, rotation about Z axis)
         # FIND THE VARIANCES OF X Y YAW. Assumed 0 for z, pitch, roll, and covariances
         msg.pose.covariance = [
-            0.05, 0.0, 0.0, 0.0, 0.0, 0.0,
-            0.0, 0.05, 0.0, 0.0, 0.0, 0.0,
+            0.3, 0.0, 0.0, 0.0, 0.0, 0.0,
+            0.0, 0.3, 0.0, 0.0, 0.0, 0.0,
             0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
             0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
             0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-            0.0, 0.0, 0.0, 0.0, 0.0, 1.0
+            0.0, 0.0, 0.0, 0.0, 0.0, 0.5
             ]
         self.publisher_buckalization.publish(msg)
     
@@ -307,7 +308,11 @@ class BuckalizationNode(Node):
             #     self.visionX = x2
             #     self.visionY = y2
 
-        # publish new vision-based pose!
+        # check that the thing you're about to publish isnt too radical and crazy
+        if (self.visionX - self.fusedOdom[0])**2 + (self.visionY - self.fusedOdom[1])**2 < self.scoreval_lookup["max_translation"]:
+            print(f"Change in pose from vision has been deemed too controvertial to show to the public")
+            return
+            # publish new vision-based pose!
         self.publish_poseWcovar()
 
     # Source - https://stackoverflow.com/a/55817881

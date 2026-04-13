@@ -45,6 +45,7 @@ class buckalizer_LSD_node(Node):
         det1 = Detection3D()
         det1.header.stamp = self.now
         det1.header.frame_id = "map"
+        det1.bbox.center
         res1 = ObjectHypothesisWithPose()
         res1.pose.pose.position.x = 14.7
         res1.pose.pose.position.y = 13.2
