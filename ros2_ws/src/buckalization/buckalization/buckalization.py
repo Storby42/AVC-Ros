@@ -136,7 +136,7 @@ class BuckalizationNode(Node):
             #Filters & sanity checks
 
             #bbox size check, gets rid of the stupid single pixel detections
-            expectedW, expectedH, minW, maxW, minH, maxH = self.scorevaldict[self.id]
+            expectedW, expectedH, minW, maxW, minH, maxH = self.scorevaldict[self.color]
             if((minH <= self.detboxh <= maxH) and (minW <= self.detboxw <= maxW)):
                 self.scores["size"] = ((expectedH - self.detboxh) ** 2 + (expectedW - self.detboxw) ** 2 )/(((maxH-minH)**2)+((maxW-minW)**2)) #lower score is better
             else:
