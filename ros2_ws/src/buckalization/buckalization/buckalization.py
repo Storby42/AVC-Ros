@@ -287,7 +287,7 @@ class BuckalizationNode(Node):
         self.visionY = self.fusedOdom[1] - (buckets_by_con[0].worldy - self.known_buckets[buckets_by_con[0].id].worldy)
 
         # 2. find rotation (around BOHC) to get the 2nd bucket into the angle that makes sense (again based on known map)
-        if len(dets.detections) >= 2:
+        if len(buckets_by_con) >= 2:
             known_bucket_1 = self.known_buckets[buckets_by_con[0].id]
             known_bucket_2 = self.known_buckets[buckets_by_con[1].id]
 
