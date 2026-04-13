@@ -107,7 +107,7 @@ class BuckalizationNode(Node):
             self.scores = {}
             self.scorevaldict = scorevaldict
             self.isvalid = True
-            self.finalscore = None
+            self.finalscore = 10000
 
         def id_bucket(self, fusedOdom, known_buckets:list): # relative coords + color of bucket you are finding the "real" version of
             # split relx and rely into world x and world y
