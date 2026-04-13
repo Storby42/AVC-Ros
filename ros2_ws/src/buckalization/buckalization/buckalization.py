@@ -71,7 +71,7 @@ class BuckalizationNode(Node):
             "max_intrabucket_dist_diff" : sv_yaml['max_intrabucket_dist_diff']
         } #should probably load this from a params file so we don't go insane while tuning it
 
-        buckets_file_path = os.path.join(parameters_file_path, 'buckets')
+        buckets_file_path = os.path.join(parameters_file_path, 'buckets.csv')
         with open(buckets_file_path, newline='\n') as csvfile:
             bucketreader = csv.reader(csvfile, delimiter=',', quotechar='|')
             for row in bucketreader:
