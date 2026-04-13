@@ -114,7 +114,7 @@ class BuckalizationNode(Node):
             # FIXED FOR ACTUAL ROS REL COORD SYS
             self.worldx = fusedOdom[0] + math.cos(fusedOdom[2])*self.relx - math.sin(fusedOdom[2])*self.rely
             self.worldy = fusedOdom[1] + math.sin(fusedOdom[2])*self.relx + math.cos(fusedOdom[2])*self.rely
-            #print("bucket pos:", self.worldx, self.worldy)
+            print("bucket pos:", self.worldx, self.worldy)
 
             best_id = 0 # id of the closest bucket of the same color
             best_dist = float('inf')
@@ -131,6 +131,7 @@ class BuckalizationNode(Node):
             # return id (index for real bucket)
             self.id = best_id
             self.id_dist = math.sqrt(best_dist)
+            print("id", self.id)
             return best_id
         
         def compute_scores(self):
