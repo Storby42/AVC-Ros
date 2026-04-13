@@ -258,8 +258,10 @@ class BuckalizationNode(Node):
                 redbucks.append(bucket)
         if len(buckified)==0:
             return
+        for bucket in buckified:
+            print(bucket.worldx)
         buckets_by_con = sorted(buckified, key=lambda bucket: -(float(bucket.finalscore)))
-        
+        print(len(buckets_by_con))
             
         #del buckets_by_con[2:]
         for bucket in buckets_by_con:
