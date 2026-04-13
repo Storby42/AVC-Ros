@@ -71,7 +71,7 @@ class BuckalizationNode(Node):
             "max_intrabucket_dist_diff" : sv_yaml['max_intrabucket_dist_diff']
         } #should probably load this from a params file so we don't go insane while tuning it
 
-        buckets_file_path = os.path.join(parameters_file_path, 'buckets.csv')
+        buckets_file_path = os.path.join(parameters_file_path, 'buckets_testing.csv')
         with open(buckets_file_path, newline='\n') as csvfile:
             bucketreader = csv.reader(csvfile, delimiter=',', quotechar='|')
             for row in bucketreader:
@@ -146,7 +146,7 @@ class BuckalizationNode(Node):
             else:
                 self.scores["size"] = -1 #If invalid, set score to -1
                 self.isvalid = False
-                print(f"Color {self.color} detection at ({self.worldx}, {self.worldy}) is being ignored for being out of size bounds.")
+                print(f"Color {self.color} detection at ({self.worldx}, {self.worldy}) is being ignored for being out of size bounds (it is {self.detboxw} by {self.detboxh}).")
 
             #ignore detections that are too far away to be accurate
             distance_to_detection = math.sqrt(self.relx ** 2 + self.rely ** 2)
@@ -156,7 +156,7 @@ class BuckalizationNode(Node):
             else:
                 self.scores["detection_range"] = -1
                 self.isvalid = False
-                print(f"Color {self.color} detection at ({self.worldx}, {self.worldy}) is being ignored for being too far away.")
+                print(f"Color {self.color} detection at ({self.worldx}, {self.worldy}) is being ignored for being too far ({abs(idealdist - distance_to_detection)/maxreldist}) away.")
 
             #Check that transform isn't absurdly massive
             if(self.id_dist <= self.scorevaldict["max_id_dist"]):
@@ -164,7 +164,7 @@ class BuckalizationNode(Node):
             else:
                 self.scores["correction_score"] = self.id_dist
                 #self.validDetection = False
-                print(f"Mild warning: color {self.color} detection at ({self.worldx}, {self.worldy}) is pretty far from any known buckets.")
+                print(f"Mild warning: color {self.color} detection at ({self.worldx}, {self.worldy}) is pretty far ({self.id_dist/self.scorevaldict["max_id_dist"]}) from any known buckets.")
             
             #Ignore correction distance score for now, it probably makes more sense to have that after handling red buckets and doing transform stuff.
 
@@ -250,22 +250,16 @@ class BuckalizationNode(Node):
         for bucket in buckified:
             bucket.id_bucket(fusedOdom=self.fusedOdom, known_buckets=self.known_buckets)
             bucket.compute_scores()
-            print("worldx from bucket id:")
-            print(bucket.worldx)
             if bucket.isvalid:
                 validbuckets.append(bucket)
                 if bucket.color == self.color_lookup["red"]:
                     redbucks.append(bucket)
         if len(validbuckets)==0:
             return
-        for bucket in validbuckets:
-            print(bucket.worldx)
+        print(f"Found {len(validbuckets)} valid buckets")
         buckets_by_con = sorted(validbuckets, key=lambda bucket: -(float(bucket.finalscore)))
-        print(len(buckets_by_con))
             
         #del buckets_by_con[2:]
-        for bucket in buckets_by_con:
-            print(bucket.worldx)
 
         if len(redbucks) >= 2:
             self.handle_ided_red(redbucks[0], redbucks[1])
@@ -280,8 +274,6 @@ class BuckalizationNode(Node):
         
         # 1. find translation to get bucket of highest confidence (BOHC) to most plausible corresponding actual (based on known map) bucket position. transform car pos estimation based on this too
         # new car pos estimation is the fused odom plus the difference between where the bucket was measured and where it actually is
-        print(buckets_by_con[0].worldx)
-        print(self.known_buckets[buckets_by_con[0].id].worldx)
 
         self.visionX = self.fusedOdom[0] - (buckets_by_con[0].worldx - self.known_buckets[buckets_by_con[0].id].worldx)
         self.visionY = self.fusedOdom[1] - (buckets_by_con[0].worldy - self.known_buckets[buckets_by_con[0].id].worldy)
