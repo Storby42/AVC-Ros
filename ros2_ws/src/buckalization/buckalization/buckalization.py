@@ -260,7 +260,7 @@ class BuckalizationNode(Node):
             return
         for bucket in validbuckets:
             print(bucket.worldx)
-        buckets_by_con = sorted(buckified, key=lambda bucket: -(float(bucket.finalscore)))
+        buckets_by_con = sorted(validbuckets, key=lambda bucket: -(float(bucket.finalscore)))
         print(len(buckets_by_con))
             
         #del buckets_by_con[2:]
