@@ -144,7 +144,7 @@ class BuckalizationNode(Node):
             else:
                 self.scores["size"] = -1 #If invalid, set score to -1
                 self.isvalid = False
-                print("Color {self.color} detection at ({self.worldx}, {self.worldy}) is being ignored for being out of size bounds.")
+                print(f"Color {self.color} detection at ({self.worldx}, {self.worldy}) is being ignored for being out of size bounds.")
                 return
 
             #ignore detections that are too far away to be accurate
@@ -155,7 +155,7 @@ class BuckalizationNode(Node):
             else:
                 self.scores["detection_range"] = -1
                 self.isvalid = False
-                print("Color {self.color} detection at ({self.worldx}, {self.worldy}) is being ignored for being too far away.")
+                print(f"Color {self.color} detection at ({self.worldx}, {self.worldy}) is being ignored for being too far away.")
                 return
 
             #Check that transform isn't absurdly massive
@@ -164,7 +164,7 @@ class BuckalizationNode(Node):
             else:
                 self.scores["correction_score"] = self.id_dist
                 #self.validDetection = False
-                print("Mild warning: color {self.color} detection at ({self.worldx}, {self.worldy}) is pretty far from any known buckets.")
+                print(f"Mild warning: color {self.color} detection at ({self.worldx}, {self.worldy}) is pretty far from any known buckets.")
                 return
             
             #Ignore correction distance score for now, it probably makes more sense to have that after handling red buckets and doing transform stuff.
@@ -175,13 +175,13 @@ class BuckalizationNode(Node):
             else:
                 self.scores["confidence"] = -1
                 self.isvalid = False
-                print("Color {self.color} detection at ({self.worldx}, {self.worldy}) is being ignored for poor detection quality.")
+                print(f"Color {self.color} detection at ({self.worldx}, {self.worldy}) is being ignored for poor detection quality.")
                 return
             
             #Weight and merge scores here, then set to self.finalscore and return.
             if self.isvalid:
                 self.finalscore=math.log((1-self.scores["confidence"])+1)+math.log(self.scores["correction_score"]+1)+math.log(self.scores["detection_range"]+1)+math.log(self.scores["size"]+1)
-                print("Valid color {self.color} detection at ({self.worldx}, {self.worldy}) found to have the final score {self.finalscore}.")
+                print(f"Valid color {self.color} detection at ({self.worldx}, {self.worldy}) found to have the final score {self.finalscore}.")
 
     def handle_ided_red(red1:Bucket, red2:Bucket):
         if red1.worldy > red2.worldy:
@@ -258,6 +258,9 @@ class BuckalizationNode(Node):
                 redbucks.append(bucket)
 
         buckets_by_con = sorted(buckified, key=lambda bucket: -bucket.finalscore)
+        if len(buckets_by_con)==0:
+            return
+            
         del buckets_by_con[2:]
 
         if len(redbucks) >= 2:
