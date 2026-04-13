@@ -25,7 +25,7 @@ bicycle_steering_controller:
     velocity_rolling_window_size: 10 # number of velocity samples to average to compute twist velocities     
     base_frame_id: base_link
     odom_frame_id: odom
-    enable_odom_tf: true
+    enable_odom_tf: false
     twist_covariance_diagonal: [0.0, 7.0, 14.0, 21.0, 28.0, 35.0]
     pose_covariance_diagonal: [0.0, 7.0, 14.0, 21.0, 28.0, 35.0]
 
@@ -34,6 +34,6 @@ pose_broadcaster:
     type: pose_broadcaster/PoseBroadcaster
     pose_name: fused_odom
     frame_id: odom
-    tf.enable: true
+    tf.enable: false
     tf.child_frame_id: base_link
 
