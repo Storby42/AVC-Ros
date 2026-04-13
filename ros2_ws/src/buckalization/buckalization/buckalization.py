@@ -245,7 +245,9 @@ class BuckalizationNode(Node):
                     confidence = detection.results[0].hypothesis.score,
                     relx = detection.results[0].pose.pose.position.x + self.BASE_LINK_OFFSET_X,
                     rely = detection.results[0].pose.pose.position.y + self.BASE_LINK_OFFSET_Y,
-                    scorevaldict=self.scoreval_lookup
+                    scorevaldict=self.scoreval_lookup,
+                    bboxh=detection.bbox.size.z,
+                    bboxw=detection.bbox.size.x
                 ))
         
         # choose the bucket of highest confidence (and start keeping track of red buckets)
