@@ -5,3 +5,4 @@ max_id_dist : 2.0 #maximum distance in meters that the transform correction is a
 short_bucket : [0.3, 0.37, 0.2, 0.4, 0.25, 0.5]
 tall_bucket : [0.3, 0.74, 0.2, 0.4, 0.6, 1]
 max_intrabucket_dist_diff : 0.5 # specifically for if 2 red buckets are measured to be significantly closer together/further apart
+max_translation : 2.0 # maximum distance (m) change that can be published
