@@ -246,19 +246,19 @@ class BuckalizationNode(Node):
         
         # choose the bucket of highest confidence (and start keeping track of red buckets)
         redbucks = []
+        validbuckets = []
         for bucket in buckified:
             bucket.id_bucket(fusedOdom=self.fusedOdom, known_buckets=self.known_buckets)
             bucket.compute_scores()
             print("worldx from bucket id:")
             print(bucket.worldx)
-            if bucket.isvalid==False:
-                buckified.remove(bucket)
-                continue
-            if bucket.color == self.color_lookup["red"]:
-                redbucks.append(bucket)
-        if len(buckified)==0:
+            if bucket.isvalid:
+                validbuckets.append(bucket)
+                if bucket.color == self.color_lookup["red"]:
+                    redbucks.append(bucket)
+        if len(validbuckets)==0:
             return
-        for bucket in buckified:
+        for bucket in validbuckets:
             print(bucket.worldx)
         buckets_by_con = sorted(buckified, key=lambda bucket: -(float(bucket.finalscore)))
         print(len(buckets_by_con))
