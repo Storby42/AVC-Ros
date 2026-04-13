@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>pose_to_pose_with_covariance</name>
+  <version>0.0.0</version>
+  <description>The pose_to_pose_with_covariance package</description>
+
+  <maintainer email="marius@todo.todo">marius</maintainer>
+
+  <license>TODO</license>
+
+  <depend>rclcpp</depend>
+  <depend>geometry_msgs</depend>
+
+  <!-- The export tag contains other, unspecified, tags -->
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
