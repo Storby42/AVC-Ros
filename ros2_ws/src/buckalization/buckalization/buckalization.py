@@ -124,6 +124,7 @@ class BuckalizationNode(Node):
                     continue
                 # use pseudo distance to find closest real counterpart
                 dist = (bucket.worldx - self.worldx) ** 2 + (bucket.worldy - self.worldy) ** 2
+                print(f"{dist} away from a match")
                 if dist < best_dist:
                     best_dist = dist
                     best_id = i
@@ -139,8 +140,9 @@ class BuckalizationNode(Node):
 
             #Filters & sanity checks
 
-            #bbox size check, gets rid of the stupid single pixel detections            
+            #bbox size check, gets rid of the stupid single pixel detections
             [expectedW, expectedH, minW, maxW, minH, maxH] = self.scorevaldict[self.color]
+            print(f"bounding box size limits |||| W: {minW} to {maxW} || H: {minH} to {maxH}")
             if((minH <= self.detboxh <= maxH) and (minW <= self.detboxw <= maxW)):
                 self.scores["size"] = ((expectedH - self.detboxh) ** 2 + (expectedW - self.detboxw) ** 2 )/(((maxH-minH)**2)+((maxW-minW)**2)) #lower score is better
             else:
