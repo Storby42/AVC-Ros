@@ -102,8 +102,8 @@ class BuckalizationNode(Node):
             # worldx is right, worldy is up
             self.worldx = worldx
             self.worldy = worldy
-            self.id = None # index of the corresponding real bucket
-            self.id_dist = None
+            self.id = -1# index of the corresponding real bucket
+            self.id_dist = -1
             self.scores = {}
             self.scorevaldict = scorevaldict
             self.isvalid = True
