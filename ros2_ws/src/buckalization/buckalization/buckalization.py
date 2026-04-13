@@ -310,8 +310,10 @@ class BuckalizationNode(Node):
 
         # check that the thing you're about to publish isnt too radical and crazy
         if (self.visionX - self.fusedOdom[0])**2 + (self.visionY - self.fusedOdom[1])**2 < self.scoreval_lookup["max_translation"]:
+            print(f"Change in pose from vision has been deemed too controvertial to show to the public")
+            return
             # publish new vision-based pose!
-            self.publish_poseWcovar()
+        self.publish_poseWcovar()
 
     # Source - https://stackoverflow.com/a/55817881
     # Posted by mujjiga, modified by community. See post 'Timeline' for change history
