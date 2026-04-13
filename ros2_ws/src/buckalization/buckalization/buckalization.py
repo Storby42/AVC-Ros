@@ -160,9 +160,9 @@ class BuckalizationNode(Node):
 
             #Check that transform isn't absurdly massive
             if(self.id_dist <= self.scorevaldict["max_id_dist"]):
-                self.scores["correction_score"] = self.best_dist/self.scorevaldict["max_id_dist"]
+                self.scores["correction_score"] = self.id_dist/self.scorevaldict["max_id_dist"]
             else:
-                self.scores["correction_score"] = self.best_dist
+                self.scores["correction_score"] = self.id_dist
                 #self.validDetection = False
                 print("Mild warning: color {self.color} detection at ({self.worldx}, {self.worldy}) is pretty far from any known buckets.")
                 return
