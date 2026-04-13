@@ -51,9 +51,9 @@ class BuckalizationNode(Node):
         # initialize the known buckets
         self.known_buckets = []
         self.color_lookup = {
-            "yellow" : 0,
-            "red" : 1,
-            "blue" : 2
+            "yellow" : 1, # 0 
+            "red" : 0, # 1
+            "blue" : 2 # 2
         }
 
         parameters_file_path = os.path.join(get_package_share_directory('buckalization'), 'data')
@@ -235,7 +235,7 @@ class BuckalizationNode(Node):
         for detection in dets.detections:
             if detection.results[0].hypothesis.score > self.MINIMUM_BUCKET_CONFIDENCE: # (only if the confidence is high enough)
                 buckified.append(self.Bucket(
-                    color = detection.results[0].hypothesis.class_id,
+                    color = int(detection.results[0].hypothesis.class_id),
                     confidence = detection.results[0].hypothesis.score,
                     relx = detection.results[0].pose.pose.position.x + self.BASE_LINK_OFFSET_X,
                     rely = detection.results[0].pose.pose.position.y + self.BASE_LINK_OFFSET_Y,
