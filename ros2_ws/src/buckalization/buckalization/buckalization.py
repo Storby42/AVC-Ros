@@ -272,7 +272,7 @@ class BuckalizationNode(Node):
             
             # calculate the difference between the bucket-to-bucket distances (known vs measured) for the 2 red bucks
             # if it's too off, throw it all away
-            b2b_dist_diff = math.abs(math.sqrt((buckets_by_con[0].worldx - buckets_by_con[1].worldx)**2 + (buckets_by_con[0].worldy - buckets_by_con[1].worldy)**2)
+            b2b_dist_diff = math.abs(math.sqrt((redbucks[0].worldx - redbucks[1].worldx)**2 + (redbucks[0].worldy - redbucks[1].worldy)**2)
                 - 1.524) #math.sqrt((known_bucket_1.worldx - known_bucket_2.worldx)**2 + (known_bucket_1.worldy - known_bucket_2.worldy)**2))
             if b2b_dist_diff > self.scoreval_lookup['max_intrabucket_dist_diff']:
                 print(f"Distances between red buckets found to be {b2b_dist_diff} off. That's too much. No new position will be calculated")
