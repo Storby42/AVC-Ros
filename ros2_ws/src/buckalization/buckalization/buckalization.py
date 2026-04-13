@@ -51,8 +51,8 @@ class BuckalizationNode(Node):
         # initialize the known buckets
         self.known_buckets = []
         self.color_lookup = {
-            "yellow" : 1, # 0 
-            "red" : 0, # 1
+            "yellow" : 0, # 0 
+            "red" : 1, # 1
             "blue" : 2 # 2
         }
 
@@ -158,7 +158,7 @@ class BuckalizationNode(Node):
             else:
                 self.scores["detection_range"] = -1
                 self.isvalid = False
-                print(f"Color {self.color} detection at ({self.worldx}, {self.worldy}) is being ignored for being too far ({abs(idealdist - distance_to_detection)/maxreldist}) away.")
+                print(f"Color {self.color} detection at ({self.worldx}, {self.worldy}) is being ignored for being too far ({distance_to_detection}) away.")
 
             #Check that transform isn't absurdly massive
             if(self.id_dist <= self.scorevaldict["max_id_dist"]):
