@@ -249,6 +249,7 @@ class BuckalizationNode(Node):
         for bucket in buckified:
             bucket.id_bucket(fusedOdom=self.fusedOdom, known_buckets=self.known_buckets)
             bucket.compute_scores()
+            print("worldx from bucket id:")
             print(bucket.worldx)
             if bucket.isvalid==False:
                 buckified.remove(bucket)
