@@ -77,6 +77,8 @@ class BuckalizationNode(Node):
             for row in bucketreader:
                 self.known_buckets.append(self.Bucket(worldx=float(row[0]), worldy=float(row[1]), color=self.color_lookup[row[2]]))
             print("Buckets loaded")
+        print(sv_yaml['short_bucket'])
+        print(sv_yaml['tall_bucket'])
 
         # variables for the calcs
         self.fusedOdom = None # stored as a 3 long list; x, y, yaw. calculated values.
@@ -136,7 +138,10 @@ class BuckalizationNode(Node):
             #Filters & sanity checks
 
             #bbox size check, gets rid of the stupid single pixel detections
+            print(self.color)
+            
             expectedW, expectedH, minW, maxW, minH, maxH = self.scorevaldict[self.color]
+            
             print(self.detboxh, self.detboxw, expectedH, expectedW)
             if((minH <= self.detboxh <= maxH) and (minW <= self.detboxw <= maxW)):
                 self.scores["size"] = ((expectedH - self.detboxh) ** 2 + (expectedW - self.detboxw) ** 2 )/(((maxH-minH)**2)+((maxW-minW)**2)) #lower score is better
