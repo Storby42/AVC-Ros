@@ -255,7 +255,7 @@ class BuckalizationNode(Node):
 
         if len(buckified)==0:
             return
-        buckets_by_con = sorted(buckified, key=lambda bucket: -bucket.finalscore)
+        buckets_by_con = sorted(buckified, key=lambda bucket: -(float(bucket.finalscore))
         
             
         del buckets_by_con[2:]
