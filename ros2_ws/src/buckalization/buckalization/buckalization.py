@@ -263,7 +263,7 @@ class BuckalizationNode(Node):
             
         del buckets_by_con[2:]
         for bucket in buckets_by_con:
-            print(bucket)
+            print(bucket.worldx)
 
         if len(redbucks) >= 2:
             self.handle_ided_red(redbucks[0], redbucks[1])
