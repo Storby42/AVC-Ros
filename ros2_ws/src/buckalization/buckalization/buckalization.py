@@ -275,6 +275,9 @@ class BuckalizationNode(Node):
         
         # 1. find translation to get bucket of highest confidence (BOHC) to most plausible corresponding actual (based on known map) bucket position. transform car pos estimation based on this too
         # new car pos estimation is the fused odom plus the difference between where the bucket was measured and where it actually is
+        print(buckets_by_con[0].worldx)
+        print(self.known_buckets[buckets_by_con[0].id].worldx)
+
         self.visionX = self.fusedOdom[0] - (buckets_by_con[0].worldx - self.known_buckets[buckets_by_con[0].id].worldx)
         self.visionY = self.fusedOdom[1] - (buckets_by_con[0].worldy - self.known_buckets[buckets_by_con[0].id].worldy)
 
