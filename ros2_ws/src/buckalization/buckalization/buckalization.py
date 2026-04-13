@@ -249,12 +249,12 @@ class BuckalizationNode(Node):
         for bucket in buckified:
             bucket.id_bucket(fusedOdom=self.fusedOdom, known_buckets=self.known_buckets)
             bucket.compute_scores()
+            print(bucket.worldx)
             if bucket.isvalid==False:
                 buckified.remove(bucket)
                 continue
             if bucket.color == self.color_lookup["red"]:
                 redbucks.append(bucket)
-
         if len(buckified)==0:
             return
         buckets_by_con = sorted(buckified, key=lambda bucket: -(float(bucket.finalscore)))
