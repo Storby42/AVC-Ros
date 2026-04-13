@@ -145,7 +145,6 @@ class BuckalizationNode(Node):
                 self.scores["size"] = -1 #If invalid, set score to -1
                 self.isvalid = False
                 print(f"Color {self.color} detection at ({self.worldx}, {self.worldy}) is being ignored for being out of size bounds.")
-                return
 
             #ignore detections that are too far away to be accurate
             distance_to_detection = math.sqrt(self.relx ** 2 + self.rely ** 2)
@@ -156,7 +155,6 @@ class BuckalizationNode(Node):
                 self.scores["detection_range"] = -1
                 self.isvalid = False
                 print(f"Color {self.color} detection at ({self.worldx}, {self.worldy}) is being ignored for being too far away.")
-                return
 
             #Check that transform isn't absurdly massive
             if(self.id_dist <= self.scorevaldict["max_id_dist"]):
@@ -165,7 +163,6 @@ class BuckalizationNode(Node):
                 self.scores["correction_score"] = self.id_dist
                 #self.validDetection = False
                 print(f"Mild warning: color {self.color} detection at ({self.worldx}, {self.worldy}) is pretty far from any known buckets.")
-                return
             
             #Ignore correction distance score for now, it probably makes more sense to have that after handling red buckets and doing transform stuff.
 
@@ -176,7 +173,6 @@ class BuckalizationNode(Node):
                 self.scores["confidence"] = -1
                 self.isvalid = False
                 print(f"Color {self.color} detection at ({self.worldx}, {self.worldy}) is being ignored for poor detection quality.")
-                return
             
             #Weight and merge scores here, then set to self.finalscore and return.
             if self.isvalid:
@@ -257,9 +253,10 @@ class BuckalizationNode(Node):
             if bucket.color == self.color_lookup["red"]:
                 redbucks.append(bucket)
 
-        buckets_by_con = sorted(buckified, key=lambda bucket: -bucket.finalscore)
-        if len(buckets_by_con)==0:
+        if len(buckified)==0:
             return
+        buckets_by_con = sorted(buckified, key=lambda bucket: -bucket.finalscore)
+        
             
         del buckets_by_con[2:]
 
