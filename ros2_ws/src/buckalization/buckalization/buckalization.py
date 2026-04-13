@@ -129,6 +129,7 @@ class BuckalizationNode(Node):
                     best_id = i
             
             # return id (index for real bucket)
+            print(f"Best id: {best_id} at distance: {best_dist}")
             self.id = best_id
             self.id_dist = math.sqrt(best_dist)
             print("id", self.id)
