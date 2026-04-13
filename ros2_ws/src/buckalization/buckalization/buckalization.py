@@ -257,7 +257,7 @@ class BuckalizationNode(Node):
         if len(validbuckets)==0:
             return
         print(f"Found {len(validbuckets)} valid buckets")
-        buckets_by_con = sorted(validbuckets, key=lambda bucket: -(float(bucket.finalscore)))
+        buckets_by_con = sorted(validbuckets, key=lambda bucket: float(bucket.finalscore))
             
         #del buckets_by_con[2:]
 
