@@ -19,7 +19,7 @@ public:
     out_msg_.pose.covariance[14] = 0.00;
     out_msg_.pose.covariance[21] = 0.00;
     out_msg_.pose.covariance[28] = 0.00;
-    out_msg_.pose.covariance[35] = 0.01;
+    out_msg_.pose.covariance[35] = 0.0005;
   }
 
   void poseCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg)
