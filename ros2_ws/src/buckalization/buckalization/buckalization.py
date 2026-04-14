@@ -123,15 +123,15 @@ class BuckalizationNode(Node):
             for i, bucket in enumerate(known_buckets):
                 if bucket.color != self.color:
                     continue
-                # use pseudo distance to find closest real counterpart
+                # use pseudo distance to find closest real counterpart. #TODO just use the real dist it isnt worth it you need to print
                 dist = (bucket.worldx - self.worldx) ** 2 + (bucket.worldy - self.worldy) ** 2
-                print(f"{dist} away from a match")
+                print(f"{math.sqrt(dist)} away from a match")
                 if dist < best_dist:
                     best_dist = dist
                     best_id = i
             
             # return id (index for real bucket)
-            print(f"Best id: {best_id} at distance: {best_dist}")
+            print(f"Best id: {best_id} at distance: {math.sqrt(best_dist)}")
             self.id = best_id
             self.id_dist = math.sqrt(best_dist)
             print("id", self.id)
@@ -309,7 +309,7 @@ class BuckalizationNode(Node):
             #     self.visionY = y2
 
         # check that the thing you're about to publish isnt too radical and crazy
-        if (self.visionX - self.fusedOdom[0])**2 + (self.visionY - self.fusedOdom[1])**2 < self.scoreval_lookup["max_translation"]:
+        if (math.sqrt((self.visionX - self.fusedOdom[0])**2 + (self.visionY - self.fusedOdom[1])**2)) > self.scoreval_lookup["max_translation"]:
             print(f"Change in pose from vision has been deemed too controvertial to show to the public")
             return
             # publish new vision-based pose!
