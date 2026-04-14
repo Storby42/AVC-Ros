@@ -23,15 +23,15 @@ def generate_launch_description():
 
     os.environ['FILE_PATH'] = str(parameters_file_dir)
     return LaunchDescription([
-    #launch_ros.actions.Node(
-    #        package='robot_localization', # declaring that we want to use the prebuilt robot_localization package
-    #        executable='ekf_node', # extended kalman filter
-    #        name='ekf_filter_node_local', # differentiates between the headings in ekf.yaml
-	#        output='screen', # all output (e.g. print, log) should be sent to the terminal screen where the launch file was started
-         #   parameters=[parameters_file_path],
-          #  remappings=[('odometry/filtered', 'odometry/local')] # instead of both ekf_local and ekf_global publishing to the same topic, 
-           #                                                      # now they're remapped to publish to different ones
-           #),
+    launch_ros.actions.Node(
+           package='robot_localization', # declaring that we want to use the prebuilt robot_localization package
+           executable='ekf_node', # extended kalman filter
+           name='ekf_filter_node_local', # differentiates between the headings in ekf.yaml
+	       output='screen', # all output (e.g. print, log) should be sent to the terminal screen where the launch file was started
+           parameters=[parameters_file_path],
+           remappings=[('odometry/filtered', 'odometry/local')] # instead of both ekf_local and ekf_global publishing to the same topic, 
+                                                                # now they're remapped to publish to different ones
+           ),
     launch_ros.actions.Node(
             package='robot_localization', 
             executable='ekf_node', 

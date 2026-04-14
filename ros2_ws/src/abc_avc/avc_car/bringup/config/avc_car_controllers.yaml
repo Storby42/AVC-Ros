@@ -34,6 +34,6 @@ pose_broadcaster:
     type: pose_broadcaster/PoseBroadcaster
     pose_name: fused_odom
     frame_id: odom
-    tf.enable: true
+    tf.enable: false
     tf.child_frame_id: base_link
 
