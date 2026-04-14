@@ -113,7 +113,7 @@ controller_server:
         min_approach_linear_velocity: 0.05
         approach_velocity_scaling_dist: 0.5
 
-        max_allowed_time_to_collision_up_to_target: 1.0 # max time in which velocity is projected forward to check for potential collisions
+        max_allowed_time_to_collision_up_to_target: 0.2 # max time in which velocity is projected forward to check for potential collisions
                                                         # -> if there's collisions, slow down (in order to allow more time for path plan change?)
         use_collision_detection: true
         
