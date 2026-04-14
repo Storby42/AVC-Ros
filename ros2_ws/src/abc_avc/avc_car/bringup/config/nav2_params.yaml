@@ -90,7 +90,7 @@ controller_server:
     FollowPath:
        # CHANGED from regulated pure persuit controller -> to vector persuit controller
         plugin: "vector_pursuit_controller::VectorPursuitController"
-        k: 7.0 # rotation_time = k * translation_time, relates how much you fast you can turn to the translational (forward) movement
+        k: 4.0 # rotation_time = k * translation_time, relates how much you fast you can turn to the translational (forward) movement
         desired_linear_vel: 0.6 # target linear velocity
         min_turning_radius: 0.7 # should be less than planner min turning radius (so you don't get stuck in a loop)
         
@@ -174,7 +174,7 @@ local_costmap:
       # aka the cyan
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 20.0 # decay factor across inflation radius
+        cost_scaling_factor: 10.0 # decay factor across inflation radius
         inflation_radius: 1.0 # radius to inflate costmap around lethal obstacles
       always_send_full_costmap: True
 
