@@ -85,12 +85,12 @@ controller_server:
       plugin: "nav2_controller::SimpleGoalChecker"
       xy_goal_tolerance: 0.3 # meters
       yaw_goal_tolerance: 0.75 # radians
-      path_length_tolerance: 0.4 # meters
+      path_length_tolerance: 2.0 # meters
       stateful: True # 
     FollowPath:
        # CHANGED from regulated pure persuit controller -> to vector persuit controller
         plugin: "vector_pursuit_controller::VectorPursuitController"
-        k: 10.0 # rotation_time = k * translation_time, relates how much you fast you can turn to the translational (forward) movement
+        k: 8.0 # rotation_time = k * translation_time, relates how much you fast you can turn to the translational (forward) movement
         desired_linear_vel: 0.6 # target linear velocity
         min_turning_radius: 0.7 # should be less than planner min turning radius (so you don't get stuck in a loop)
         
@@ -126,9 +126,6 @@ controller_server:
         max_linear_accel: 2.0
         max_lateral_accel: 0.2 # used to slow down the robot during sharp turns; higher values -> higher linear velocity during turn
         max_robot_pose_search_dist: 10.0 # how far controller searches for goals
-
-        prune_plan: false
-        prune_distance: 2.0
 
         use_interpolation: true # basically interpolates between waypoints -> more precise path
         use_heading_from_path: true # set to true because we're using the smac path planner
