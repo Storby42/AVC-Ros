@@ -127,7 +127,7 @@ controller_server:
         max_lateral_accel: 0.2 # used to slow down the robot during sharp turns; higher values -> higher linear velocity during turn
         max_robot_pose_search_dist: 10.0 # how far controller searches for goals
 
-        prune_plan: true
+        prune_plan: false
         prune_distance: 2.0
 
         use_interpolation: true # basically interpolates between waypoints -> more precise path
