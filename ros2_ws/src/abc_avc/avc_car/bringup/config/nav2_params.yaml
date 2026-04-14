@@ -78,7 +78,7 @@ controller_server:
 
     progress_checker:
       plugin: "nav2_controller::SimpleProgressChecker"
-      required_movement_radius: 0.5
+      required_movement_radius: 1.0
       movement_time_allowance: 10.0
       # minimum amount of movement the robot must undergo in a certain time to be counted as progressing
     goal_checker:
@@ -126,6 +126,9 @@ controller_server:
         max_linear_accel: 2.0
         max_lateral_accel: 0.2 # used to slow down the robot during sharp turns; higher values -> higher linear velocity during turn
         max_robot_pose_search_dist: 10.0 # how far controller searches for goals
+
+        prune_plan: true
+        prune_distance: 1.0
 
         use_interpolation: true # basically interpolates between waypoints -> more precise path
         use_heading_from_path: true # set to true because we're using the smac path planner
