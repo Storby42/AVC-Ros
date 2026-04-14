@@ -90,7 +90,7 @@ controller_server:
     FollowPath:
        # CHANGED from regulated pure persuit controller -> to vector persuit controller
         plugin: "vector_pursuit_controller::VectorPursuitController"
-        k: 20.0 # rotation_time = k * translation_time, relates how much you fast you can turn to the translational (forward) movement
+        k: 3.0 # rotation_time = k * translation_time, relates how much you fast you can turn to the translational (forward) movement
         desired_linear_vel: 0.6 # target linear velocity
         min_turning_radius: 0.7 # should be less than planner min turning radius (so you don't get stuck in a loop)
         
