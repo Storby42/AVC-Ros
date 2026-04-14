@@ -91,7 +91,7 @@ controller_server:
        # CHANGED from regulated pure persuit controller -> to vector persuit controller
         plugin: "vector_pursuit_controller::VectorPursuitController"
         k: 6.0 # rotation_time = k * translation_time, relates how much you fast you can turn to the translational (forward) movement
-        desired_linear_vel: 1.5 # target linear velocity
+        desired_linear_vel: 1.0 # target linear velocity
         min_turning_radius: 0.7 # should be less than planner min turning radius (so you don't get stuck in a loop)
         
         use_rotate_to_heading: false # if the current heading =/= path heading, turn to the path heading 
