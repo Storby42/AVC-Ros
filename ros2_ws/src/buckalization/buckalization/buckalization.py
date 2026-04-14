@@ -281,6 +281,9 @@ class BuckalizationNode(Node):
         self.visionX = self.fusedOdom[0] - (buckets_by_con[0].worldx - self.known_buckets[buckets_by_con[0].id].worldx)
         self.visionY = self.fusedOdom[1] - (buckets_by_con[0].worldy - self.known_buckets[buckets_by_con[0].id].worldy)
 
+
+        self.visionYaw = self.fusedOdom[2] # Pass through odom yaw in case rotation fix does't happen
+
         # 2. find rotation (around BOHC) to get the 2nd bucket into the angle that makes sense (again based on known map)
         if len(buckets_by_con) >= 2:
             known_bucket_1 = self.known_buckets[buckets_by_con[0].id]
