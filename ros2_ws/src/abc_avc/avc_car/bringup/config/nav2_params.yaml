@@ -83,7 +83,7 @@ controller_server:
       # minimum amount of movement the robot must undergo in a certain time to be counted as progressing
     goal_checker:
       plugin: "nav2_controller::SimpleGoalChecker"
-      xy_goal_tolerance: 0.3 # meters
+      xy_goal_tolerance: 0.6 # meters
       yaw_goal_tolerance: 0.75 # radians
       path_length_tolerance: 2.0 # meters
       stateful: True # 
@@ -216,10 +216,10 @@ planner_server:
       plugin: "nav2_smac_planner::SmacPlannerHybrid" 
       downsample_costmap: false  # DOESN'T downsample entire map -> more accurate (uses full resolution) but more processing power     
       downsampling_factor: 1     # if we want to downsample, the factor to divide resolution        
-      tolerance: 0.4 # tolerance from requested goalpoint (e.g. if exact path can't be found)
+      tolerance: 0.5 # tolerance from requested goalpoint (e.g. if exact path can't be found)
       allow_unknown: true # allows planner to plan in places marked "unknown"
       max_iterations: 1000000             # max number of search iterations
-      max_on_approach_iterations: 10000    # number of iterations where: once robot within tolerance, try to align exactly at goal
+      max_on_approach_iterations: 0    # number of iterations where: once robot within tolerance, try to align exactly at goal
       max_planning_time: 5.0              # max planning time (seconds)
       motion_model_for_search: "DUBIN"    # default for Hybrid-A* 
       angle_quantization_bins: 72         # divides 360 degrees into # bins to find heading
@@ -228,7 +228,7 @@ planner_server:
                                           # should always be >4-5 times max turning radius or else huge planning times
       analytic_expansion_max_cost: 200.0  # doesn't allow shortcut into high cost
       analytic_expansion_max_cost_override: false # ^ is strictly enforced (if true, can override)
-      minimum_turning_radius: 1.0 # a bit larger than actual min turning error
+      minimum_turning_radius: 1.3 # a bit larger than actual min turning error
       reverse_penalty: 2.0                
       change_penalty: 3.0              
       non_straight_penalty: 1.5
@@ -237,7 +237,7 @@ planner_server:
       lookup_table_size: 20.0             # how far planner can plan
       cache_obstacle_heuristic: false #    planner recalculates distance from obstacles every time (but slower)
       debug_visualizations: false         # publishing to rviz
-      use_quadratic_cost_penalty: true   # doesn't allow quadratic (better path), false -> more senstive to obstacles
+      use_quadratic_cost_penalty: false   # doesn't allow quadratic (better path), false -> more senstive to obstacles
       downsample_obstacle_heuristic: True # allows downsampling for costmap -> quickly planning times but may path closer to obstacles
       allow_primitive_interpolation: False # doesn't allow using stuff other than standardprimitives (left, right, straight, etc.)
       smooth_path: True                    # connects to "smoother" below
