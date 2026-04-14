@@ -97,7 +97,7 @@ controller_server:
         use_rotate_to_heading: false # if the current heading =/= path heading, turn to the path heading 
                                      # by moving in place (i.e. NOT moving forward/using a curved arc)
                                      # BUT you can't do this with ackermann/bicycle
-        allow_reversing: true
+        allow_reversing: false
         
         transform_tolerance: 0.1 # if the transforms aren't being sent at this minimum tolerance, stop the robot (ensure not using outdated sensor data) 
         use_velocity_scaled_lookahead_dist: true # scales lookahead distance proportional to velocity
