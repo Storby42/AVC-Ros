@@ -13,7 +13,7 @@
         <param name="baud_rate">9600</param>
         <param name="timeout_ms">150</param>
         <param name="traction_cal">-12.7</param>
-        <param name="steering_cal">1.5</param>
+        <param name="steering_cal">2.5</param>
         <param name="servo_vel">7.563093425</param>
         <param name="servo_offset">0</param>
         <param name="wheel_radius">0.0685</param>
