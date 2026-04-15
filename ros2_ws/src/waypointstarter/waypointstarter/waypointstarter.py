@@ -12,6 +12,7 @@ from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult # H
 from geometry_msgs.msg  import Twist
 from sensor_msgs.msg import Joy
 from ament_index_python.packages import get_package_share_directory
+from tf_transformations import quaternion_from_euler
 import os
 import yaml
 
@@ -33,6 +34,23 @@ class waypointstarterNode(Node):
         self.navigator=BasicNavigator()
         with open(parameters_file_path, 'r') as file:
             waypoints=yaml.safe_load(file)
+        
+        pose = PoseStamped()
+        pose.header.frame_id = 'map'
+        pose.header.stamp = self.navigator.get_clock().now().to_msg()
+        
+        pose.pose.position.x = float(waypoints['initial_pose'][0])
+        pose.pose.position.y = float(waypoints['initial_pose'][1])
+        pose.pose.position.z = float(waypoints['initial_pose'][2])
+        
+        x_, y_, z_, w_, = quaternion_from_euler(0.0, 0.0, float(waypoints['initial_pose'][3]))
+        pose.pose.orientation.x = x_
+        pose.pose.orientation.y = y_
+        pose.pose.orientation.z = z_
+        pose.pose.orientation.w = w_
+        
+        self.navigator.setInitialPose(pose)
+
         for key, value in waypoints['waypoints'].items():
             pose = PoseStamped()
             pose.header.frame_id = 'map'
