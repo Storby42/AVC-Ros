@@ -28,7 +28,7 @@ class waypointstarterNode(Node):
 
         waypoints_dir = get_package_share_directory('waypointstarter') 
         parameters_file_dir = os.path.join(waypoints_dir, 'data') 
-        parameters_file_path = os.path.join(parameters_file_dir, 'goalstest.yaml')
+        parameters_file_path = os.path.join(parameters_file_dir, 'noramp.yaml')
 
         self.waypoint_list = []
         self.navigator=BasicNavigator()
