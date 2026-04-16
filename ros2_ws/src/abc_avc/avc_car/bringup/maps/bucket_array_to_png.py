@@ -27,8 +27,13 @@ width = 0
 for bucket in buckets:
     pg.draw.circle(win, black, bucket*map_conversion, radius*map_conversion, width)
 
-ramp_draw=pg.Rect(ramp[0]*map_conversion,ramp[1]*map_conversion,4*map_conversion,4*map_conversion)
+#ramp_draw=pg.Rect(ramp[0]*map_conversion,ramp[1]*map_conversion,4*map_conversion,4*map_conversion)
+ramp_draw=pg.Rect((ramp[0]-4)*map_conversion,ramp[1]*map_conversion,4*map_conversion,4*map_conversion)
 pg.draw.rect(win, black, ramp_draw, width)
+
+ramp_draw=pg.Rect((ramp[0]+4)*map_conversion,ramp[1]*map_conversion,4*map_conversion,4*map_conversion)
+pg.draw.rect(win, black, ramp_draw, width)
+# new ramp_draw's are to allow the car to go up the ramp by adding costs AROUND the ramp!
 
 fname = "mapnew.png"
 win = pg.transform.flip(win,False,True) # surface, flip_x, flip_y - note that this only changes the file, not the display
@@ -36,7 +41,7 @@ win = pg.transform.rotate(win, 90)
 pg.image.save(win, fname)
 print("file {} has been saved".format(fname))
 
-"""
+
 # update the display window to show the drawing
 pg.display.flip()
 
@@ -52,7 +57,5 @@ while True:
             if event.key == pg.K_ESCAPE:
                 pg.quit()
                 raise SystemExit
-
-"""
 
 

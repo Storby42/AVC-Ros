@@ -1,4 +1,5 @@
-image: maptest.png #relative path from yaml file to png file
+image: mapnew.png #relative path from yaml file to png file
+# map new is the map that adds costs AROUND the map
 mode: trinary
 resolution: 0.05 # resolution (meters per pixels) - corresponds to 1/map_conversion (not including meters_to_pixels)
 origin: [-6.096, -6.096, 0] # (x,y,yaw) origin of robot start position relative to lower left corner... not (80,40)
