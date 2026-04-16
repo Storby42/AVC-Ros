@@ -14,8 +14,8 @@ public:
       "/pose_broadcaster/pose", 1,
       std::bind(&PoseToPoseCovStamped::poseCallback, this, std::placeholders::_1));
 
-    out_msg_.pose.covariance[0] = 0.1;
-    out_msg_.pose.covariance[7] = 0.1;
+    out_msg_.pose.covariance[0] = 0.4;
+    out_msg_.pose.covariance[7] = 0.4;
     out_msg_.pose.covariance[14] = 0.00;
     out_msg_.pose.covariance[21] = 0.00;
     out_msg_.pose.covariance[28] = 0.00;
