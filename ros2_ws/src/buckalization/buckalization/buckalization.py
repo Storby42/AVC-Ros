@@ -184,7 +184,7 @@ class BuckalizationNode(Node):
                 self.finalscore=float(math.log((1-self.scores["confidence"])+1)+math.log(self.scores["correction_score"]+1)+math.log(self.scores["detection_range"]+1)+math.log(self.scores["size"]+1))
                 print(f"Valid color {self.color} detection at ({self.worldx}, {self.worldy}) found to have the final score {self.finalscore}.")
 
-    def handle_ided_red(red1:Bucket, red2:Bucket):
+    def handle_ided_red(self, red1:Bucket, red2:Bucket):
         if red1.worldy > red2.worldy:
             red1.id = 7
             red2.id = 6
