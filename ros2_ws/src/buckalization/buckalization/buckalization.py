@@ -212,8 +212,8 @@ class BuckalizationNode(Node):
         # (x, y, z, rotation about X axis, rotation about Y axis, rotation about Z axis)
         # FIND THE VARIANCES OF X Y YAW. Assumed 0 for z, pitch, roll, and covariances
         msg.pose.covariance = [
-            0.15, 0.0, 0.0, 0.0, 0.0, 0.0,
-            0.0, 0.15, 0.0, 0.0, 0.0, 0.0,
+            0.05, 0.0, 0.0, 0.0, 0.0, 0.0,
+            0.0, 0.05, 0.0, 0.0, 0.0, 0.0,
             0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
             0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
             0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
@@ -363,3 +363,13 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
+
+
+# 24.384,6.096,yellow
+# 15.24,7.62,yellow
+# 15.24,10.668,blue
+# 6.096,6.096,yellow
+# 6.096,18.288,yellow
+# 15.24,17.526,red
+# 15.24,19.05,red
+# 24.384,18.288,yellow
