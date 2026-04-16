@@ -29,10 +29,10 @@ for bucket in buckets:
 
 #ramp_draw=pg.Rect(ramp[0]*map_conversion,ramp[1]*map_conversion,4*map_conversion,4*map_conversion)
 ramp_draw=pg.Rect((ramp[0]-4)*map_conversion,ramp[1]*map_conversion,4*map_conversion,4*map_conversion)
-pg.draw.rect(win, black, ramp_draw, width)
+#pg.draw.rect(win, black, ramp_draw, width)
 
 ramp_draw=pg.Rect((ramp[0]+4)*map_conversion,ramp[1]*map_conversion,4*map_conversion,4*map_conversion)
-pg.draw.rect(win, black, ramp_draw, width)
+#pg.draw.rect(win, black, ramp_draw, width)
 # new ramp_draw's are to allow the car to go up the ramp by adding costs AROUND the ramp!
 
 fname = "mapnew.png"
