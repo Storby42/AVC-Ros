@@ -1,4 +1,4 @@
-relative_dist_limits : [3, 2, 6] # (ideal, min, max) in meters. Ideal is wherever it does detections best.
+relative_dist_limits : [3, 2, 8] # (ideal, min, max) in meters. Ideal is wherever it does detections best.
 min_confidence : 0.15 # min confidence
 max_id_dist : 3.0 #maximum distance in meters that the transform correction is allowed to be
 # expected (width, height, min width, max width, min height, max height) in meters of buckets:
