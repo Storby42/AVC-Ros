@@ -76,7 +76,7 @@ class waypointstarterNode(Node):
             # navigator = BasicNavigator()
             self.navigator.followWaypoints(self.waypoint_list)
 
-            self.navigator.lifecycleShutdown()
+            #self.navigator.lifecycleShutdown()
             exit(0)
 		
         else: # else, do nothing
