@@ -76,9 +76,9 @@ class waypointstarterNode(Node):
             pose.pose.position.y = float(value['pose'][1])
             pose.pose.position.z = float(value['pose'][2])
             
-            pose.pose.orientation.x = float(value['orientation'][0])
+            pose.pose.orientation.x = float(value['orientation'][2])
             pose.pose.orientation.y = float(value['orientation'][1])
-            pose.pose.orientation.z = float(value['orientation'][2])
+            pose.pose.orientation.z = float(value['orientation'][0])
             pose.pose.orientation.w = float(value['orientation'][3])
             
             self.waypoint_list.append(pose)
