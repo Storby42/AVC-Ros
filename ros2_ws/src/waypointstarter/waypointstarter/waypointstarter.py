@@ -82,9 +82,19 @@ class NavJoyController(Node):
         return msg
 
     def start_nav_through_poses(self, poses):
-        if not self._action_client.wait_for_server(timeout_sec=5.0):
-            self.get_logger().error("Nav2 Action Server not available!")
-            return
+        # 1. Sync timestamps to the CURRENT time
+        current_time = self.get_clock().now().to_msg()
+        
+        for p in poses:
+            p.header.stamp = current_time
+            # 2. Ensure Frame ID is correct (must match Global Costmap frame)
+            p.header.frame_id = 'map' 
+            
+            # 3. Quick sanity check: Orientation cannot be all zeros
+            o = p.pose.orientation
+            if o.w == 0.0 and o.x == 0.0 and o.y == 0.0 and o.z == 0.0:
+                self.get_logger().warn("Detected zero-quat! Defaulting to W=1")
+                o.w = 1.0
 
         goal_msg = NavigateThroughPoses.Goal()
         goal_msg.poses = poses
