@@ -218,8 +218,8 @@ planner_server:
       downsampling_factor: 1     # if we want to downsample, the factor to divide resolution        
       tolerance: 0.5 # tolerance from requested goalpoint (e.g. if exact path can't be found)
       allow_unknown: true # allows planner to plan in places marked "unknown"
-      max_iterations: 1000000             # max number of search iterations
-      max_on_approach_iterations: 0    # number of iterations where: once robot within tolerance, try to align exactly at goal
+      max_iterations: 10000000             # max number of search iterations
+      max_on_approach_iterations: 10000    # number of iterations where: once robot within tolerance, try to align exactly at goal
       max_planning_time: 5.0              # max planning time (seconds)
       motion_model_for_search: "DUBIN"    # default for Hybrid-A* 
       angle_quantization_bins: 72         # divides 360 degrees into # bins to find heading
