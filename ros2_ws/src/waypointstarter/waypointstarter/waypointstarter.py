@@ -78,7 +78,7 @@ class NavJoyController(Node):
         msg.header.frame_id = 'map'
         msg.header.stamp = self.get_clock().now().to_msg()
         msg.pose.position.x, msg.pose.position.y, msg.pose.position.z = map(float, pose)
-        msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w = map(float, orientation)
+        msg.pose.orientation.w, msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z = map(float, orientation)
         return msg
 
     def start_nav_through_poses(self, poses):
