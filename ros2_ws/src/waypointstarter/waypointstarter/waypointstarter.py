@@ -74,8 +74,8 @@ class waypointstarterNode(Node):
             
             # Launch the ROS 2 Navigation Stack
             # navigator = BasicNavigator()
-            self.navigator.followWaypoints(self.waypoint_list)
-
+            #self.navigator.followWaypoints(self.waypoint_list)
+            self.navigator.goThroughPoses(self.waypoint_list)
             #self.navigator.lifecycleShutdown()
             exit(0)
 		
