@@ -1,61 +1,62 @@
 import yaml
 import rclpy
+import os
 from rclpy.node import Node
 from rclpy.action import ActionClient
-from nav2_msgs.action import NavigateThroughPoses
+from nav2_msgs.action import NavigateThroughPoses, FollowWaypoints
 from geometry_msgs.msg import PoseStamped
-from sensor_msgs.msg import Joy  # Added for joystick support
-
-import os
-
+from sensor_msgs.msg import Joy
 from ament_index_python.packages import get_package_share_directory
 
 class NavJoyController(Node):
     def __init__(self):
         super().__init__('nav_joy_controller')
         
-        # 1. Action Client for Nav2
-        self._action_client = ActionClient(
+        # 1. Action Clients
+        self._nav_poses_client = ActionClient(
             self, 
             NavigateThroughPoses, 
             'navigate_through_poses'
         )
+
+        self._follow_waypoints_client = ActionClient(
+            self,
+            FollowWaypoints,
+            'follow_waypoints'
+        )
         
         # 2. Subscriber for Joy topic
-        # Change 'joy' to your actual topic name if different
         self.subscription = self.create_subscription(
             Joy,
             'joy_start',
             self.joy_callback,
             10
         )
-        
 
         waypoints_dir = get_package_share_directory('waypointstarter') 
-        parameters_file_dir = os.path.join(waypoints_dir, 'data') 
-        parameters_file_path = os.path.join(parameters_file_dir, 'noramp.yaml')
+        parameters_file_path = os.path.join(waypoints_dir, 'data', 'noramp.yaml')
 
         self.accumulated_poses = []
-        self._goal_handle = None
         self.yaml_path = parameters_file_path
 
     def joy_callback(self, msg):
-        """
-        Triggered every time joystick state changes.
-        msg.buttons[0] refers to the first button on the controller.
-        """
-        # Check if button 0 is pressed
+        # Button 0 (e.g., 'A' or 'X'): Navigate Through Poses
         if msg.buttons[0] == 1:
-            self.get_logger().info('Joy button pressed! Starting navigation sequence...')
-            
-            # 1. Load the poses
+            self.get_logger().info('Button 0: Starting Nav Through Poses...')
             self.handle_goal_loader()
-            
-            # 2. If poses were loaded, start navigation
             if self.accumulated_poses:
-                self.start_nav_through_poses(self.accumulated_poses)
+                self.send_goal(NavigateThroughPoses, self._nav_poses_client)
             else:
-                self.get_logger().warn('No poses found in YAML to navigate to.')
+                self.get_logger().warn('No poses found.')
+
+        # Button 1 (e.g., 'B' or 'O'): Follow Waypoints
+        elif msg.buttons[1] == 1:
+            self.get_logger().info('Button 1: Starting Waypoint Following...')
+            self.handle_goal_loader()
+            if self.accumulated_poses:
+                self.send_goal(FollowWaypoints, self._follow_waypoints_client)
+            else:
+                self.get_logger().warn('No poses found.')
 
     def handle_goal_loader(self):
         self.accumulated_poses.clear()
@@ -69,7 +70,7 @@ class NavJoyController(Node):
                 msg = self.convert_to_msg(wp['pose'], wp['orientation'])
                 self.accumulated_poses.append(msg)
                 
-            self.get_logger().info(f'Successfully loaded {len(self.accumulated_poses)} waypoints.')
+            self.get_logger().info(f'Loaded {len(self.accumulated_poses)} waypoints.')
         except Exception as e:
             self.get_logger().error(f"Failed to load YAML: {str(e)}")
 
@@ -81,25 +82,24 @@ class NavJoyController(Node):
         msg.pose.orientation.w, msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z = map(float, orientation)
         return msg
 
-    def start_nav_through_poses(self, poses):
-        # 1. Sync timestamps to the CURRENT time
+    def send_goal(self, action_type, client):
+        """Generic goal sender for both Nav2 action types."""
+        if not client.wait_for_server(timeout_sec=2.0):
+            self.get_logger().error("Action server not available!")
+            return
+
+        # Prepare timestamps
         current_time = self.get_clock().now().to_msg()
-        
-        for p in poses:
+        for p in self.accumulated_poses:
             p.header.stamp = current_time
-            # 2. Ensure Frame ID is correct (must match Global Costmap frame)
-            p.header.frame_id = 'map' 
-            
-            # 3. Quick sanity check: Orientation cannot be all zeros
-            o = p.pose.orientation
-            if o.w == 0.0 and o.x == 0.0 and o.y == 0.0 and o.z == 0.0:
-                self.get_logger().warn("Detected zero-quat! Defaulting to W=1")
-                o.w = 1.0
+            if p.pose.orientation.w == 0.0 and p.pose.orientation.x == 0.0:
+                p.pose.orientation.w = 1.0
 
-        goal_msg = NavigateThroughPoses.Goal()
-        goal_msg.poses = poses
+        goal_msg = action_type.Goal()
+        goal_msg.poses = self.accumulated_poses
 
-        send_goal_future = self._action_client.send_goal_async(goal_msg)
+        self.get_logger().info(f"Sending goal to {action_type.__name__}...")
+        send_goal_future = client.send_goal_async(goal_msg)
         send_goal_future.add_done_callback(self._goal_response_callback)
 
     def _goal_response_callback(self, future):
@@ -108,16 +108,14 @@ class NavJoyController(Node):
             self.get_logger().error("Goal rejected")
             return
         
-        self.get_logger().info("Goal accepted, moving...")
+        self.get_logger().info("Goal accepted.")
         result_future = goal_handle.get_result_async()
-        result_future.add_done_callback(lambda f: self.get_logger().info("Navigation Finished"))
+        result_future.add_done_callback(lambda f: self.get_logger().info("Mission Completed"))
 
 def main(args=None):
     rclpy.init(args=args)
     node = NavJoyController()
-    
     try:
-        # This 'spin' keeps the node alive and listening for joy messages
         rclpy.spin(node)
     except KeyboardInterrupt:
         pass
@@ -127,4 +125,3 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
-#comment for git push
