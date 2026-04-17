@@ -25,7 +25,7 @@ class NavJoyController(Node):
         # Change 'joy' to your actual topic name if different
         self.subscription = self.create_subscription(
             Joy,
-            'joy',
+            'joy_start',
             self.joy_callback,
             10
         )
