@@ -5,9 +5,11 @@ from rclpy.duration import Duration # Handles time for ROS 2
 import rclpy # Python client library for ROS 2
 from rclpy.node import Node
 from rclpy.executors import MultiThreadedExecutor
+from rclpy.action import ActionClient
 
  
 from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult # Helper module
+from nav2_msgs.action import NavigateThroughPoses
 
 from geometry_msgs.msg  import Twist
 from sensor_msgs.msg import Joy
@@ -32,6 +34,11 @@ class waypointstarterNode(Node):
 
         self.waypoint_list = []
         self.navigator=BasicNavigator()
+        self.nav_through_poses_action_client = ActionClient(self, NavigateThroughPoses, 'navigate_through_poses')
+        self.nav_through_poses_goal = NavigateThroughPoses.Goal()
+        self.nav_through_poses_goal_handle = None
+        self.server_timeout = Duration(seconds=5)
+        self.timer = None
         with open(parameters_file_path, 'r') as file:
             waypoints=yaml.safe_load(file)
 
@@ -76,6 +83,53 @@ class waypointstarterNode(Node):
             
             self.waypoint_list.append(pose)
       
+    def startNavThroughPoses(self, poses):
+        is_action_server_ready = self.nav_through_poses_action_client.wait_for_server(timeout_sec=5.0)
+        if not is_action_server_ready:
+            self.get_logger().error(
+                "navigate_through_poses action server is not available. Is the initial pose set?"
+            )
+            return
+
+        self.nav_through_poses_goal.poses = poses
+        self.get_logger().info(
+            "NavigateThroughPoses will be called using the BT Navigator's default behavior tree."
+        )
+
+        self.get_logger().debug(
+            f"Sending a path of {len(self.nav_through_poses_goal.poses)} waypoints:"
+        )
+        for waypoint in self.nav_through_poses_goal.poses:
+            self.get_logger().debug(
+                f"\t({waypoint.pose.position.x}, {waypoint.pose.position.y})"
+            )
+
+        # Enable result awareness by providing an empty lambda function
+        send_goal_options = NavigateThroughPoses.SendGoalOptions()
+        send_goal_options.result_callback = lambda result: setattr(self, 'nav_through_poses_goal_handle', None)
+
+        future_goal_handle = self.nav_through_poses_action_client.send_goal_async(
+            self.nav_through_poses_goal, send_goal_options
+        )
+        if rclpy.spin_until_future_complete(self, future_goal_handle, self.server_timeout) != rclpy.FutureReturnCode.SUCCESS:
+            self.get_logger().error("Send goal call failed")
+            return
+
+        # Get the goal handle and save so that we can check on completion in the timer callback
+        self.nav_through_poses_goal_handle = future_goal_handle.result()
+        if not self.nav_through_poses_goal_handle:
+            self.get_logger().error("Goal was rejected by server")
+            return
+
+        self.timer = self.create_timer(0.2, self.timer_callback)
+
+    def timer_callback(self):
+        if self.nav_through_poses_goal_handle and self.nav_through_poses_goal_handle.done():
+            self.nav_through_poses_goal_handle = None
+            if self.timer:
+                self.timer.cancel()
+                self.timer = None
+      
     def joy_callback(self, data):
         if data.buttons[0]==1: # TODO: change to whatever button press is; if the joy says start, then send the waypoints
             # Start the ROS 2 Python Client Library
@@ -84,9 +138,10 @@ class waypointstarterNode(Node):
             # Launch the ROS 2 Navigation Stack
             # navigator = BasicNavigator()
             #self.navigator.followWaypoints(self.waypoint_list)
-            self.navigator.goThroughPoses(self.waypoint_list)
+            self.startNavThroughPoses(self.waypoint_list)
             #self.navigator.lifecycleShutdown()
             exit(0)
+    
 		
         else: # else, do nothing
             return 
