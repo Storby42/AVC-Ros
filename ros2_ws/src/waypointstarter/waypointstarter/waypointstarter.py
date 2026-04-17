@@ -5,7 +5,7 @@ from rclpy.duration import Duration # Handles time for ROS 2
 import rclpy # Python client library for ROS 2
 from rclpy.node import Node
 from rclpy.executors import MultiThreadedExecutor
-from rclpy.action import ActionClient
+from rclpy.action import ActionClient, SendGoalOptions
 
  
 from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult # Helper module
@@ -105,7 +105,7 @@ class waypointstarterNode(Node):
             )
 
         # Enable result awareness by providing an empty lambda function
-        send_goal_options = NavigateThroughPoses.SendGoalOptions()
+        send_goal_options = SendGoalOptions()
         send_goal_options.result_callback = lambda result: setattr(self, 'nav_through_poses_goal_handle', None)
 
         future_goal_handle = self.nav_through_poses_action_client.send_goal_async(
